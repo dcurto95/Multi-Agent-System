@@ -50,7 +50,7 @@ public class PingAgent extends Agent {
 		}
 
 		public void action() {
-			ACLMessage  msg = myAgent.receive();
+			ACLMessage  msg = myAgent.blockingReceive();
 			if(msg != null){
 				ACLMessage reply = msg.createReply();
 
