@@ -1,21 +1,18 @@
 package agents;
 
 import behaviours.ClassifierBehaviour;
-import behaviours.UserBehaviour;
 import jade.core.Agent;
 import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
 import jade.util.Logger;
-import utils.Configuration;
 
 public class ClassifierAgent extends Agent {
     private Logger myLogger = Logger.getMyLogger(getClass().getName());
 
     @Override
     protected void setup() {
-        System.out.println("Class here");
         // Registration with the DF
         DFAgentDescription dfd = new DFAgentDescription();
         ServiceDescription sd = new ServiceDescription();

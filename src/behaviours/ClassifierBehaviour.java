@@ -12,8 +12,14 @@ public class ClassifierBehaviour extends CyclicBehaviour {
             this.classifierAgent = agent;
     }
 
+    @Override
     public void action(){
-        System.out.println("Agent " + this.myAgent.getLocalName() + " >>> is here!");
+        try {
+            System.out.println("Agent " + this.myAgent.getLocalName() + " >>> is here!");
+            Thread.sleep(10000000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
 }

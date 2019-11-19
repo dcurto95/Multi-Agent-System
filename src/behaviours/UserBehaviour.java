@@ -94,21 +94,6 @@ public class UserBehaviour extends CyclicBehaviour {
         }
     }
 
-    /*
-    private void sendRefuse(ACLMessage msg, ACLMessage reply) {
-        System.out.println("Agent " + this.myAgent.getLocalName() + " - Unexpected request [" + null + "] received from " + msg.getSender().getLocalName());
-        reply.setPerformative(ACLMessage.REFUSE);
-        reply.setContent("Comunicacion restringida");
-        this.myAgent.send(reply);
-    }
-
-    private void sendACK(ACLMessage message, ACLMessage reply) {
-        System.out.println("Agent " + this.myAgent.getLocalName() + " - Received Message Request from " + message.getSender().getLocalName());
-        reply.setPerformative(ACLMessage.INFORM);
-        reply.setContent("ACK");
-        this.myAgent.send(reply);
-    }
-    */
 
     private AID getManagerAID() {
         AID managerAID = null;

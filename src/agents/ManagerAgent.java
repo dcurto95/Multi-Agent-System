@@ -1,7 +1,6 @@
 package agents;
 
 import behaviours.ManagerBehaviour;
-import behaviours.UserBehaviour;
 import jade.core.Agent;
 import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
@@ -9,7 +8,6 @@ import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
 import jade.util.Logger;
 import jade.wrapper.AgentContainer;
-import jade.wrapper.ControllerException;
 import jade.wrapper.StaleProxyException;
 import utils.Configuration;
 
@@ -59,21 +57,15 @@ public class ManagerAgent extends Agent {
     }
 
     public Boolean createClassifiers() {
-        //TODO: Create classifiers
         AgentContainer ac = this.getContainerController();
         try {
             //for (int i = 0; i < this.configuration.getClassifiers(); i++){
             for (int i = 0; i < 3; i++){
-                ac.createNewAgent("Classifier_" + i, "agents.ClassifierAgent", new Object[0]);
+                ac.createNewAgent("Classifier_" + i, "agents.ClassifierAgent", new Object[0]).start();
             }
         } catch (StaleProxyException e) {
             e.printStackTrace();
             return false;
-        }
-        try {
-            ac.start();
-        } catch (ControllerException e) {
-            e.printStackTrace();
         }
         return true;
     }

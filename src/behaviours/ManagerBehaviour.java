@@ -56,15 +56,19 @@ public class ManagerBehaviour extends CyclicBehaviour {
                             }
                             System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Accepted request to initialize classifiers");
                             Boolean done = managerAgent.createClassifiers();
-                            //TODO: If done --> OK, else FAILURE?
                             ACLMessage reply = receivedMessage.createReply();
 
                             //reply.addReceiver(userAID);
-                            System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Init done");
-                            reply.setPerformative(ACLMessage.INFORM);
-                            myAgent.send(reply);
-
-                            state = INIT_DONE;
+                            if (done){
+                                System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Init done");
+                                reply.setPerformative(ACLMessage.INFORM);
+                                myAgent.send(reply);
+                                state = INIT_DONE;
+                            }
+                            else{
+                                reply.setPerformative(ACLMessage.FAILURE);
+                                myAgent.send(reply);
+                            }
                             break;
                     }
                 }
