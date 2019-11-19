@@ -18,8 +18,8 @@ public class UserAgent extends Agent {
         return configuration;
     }
 
-    public UserAgent(Configuration configFile) {
-        this.configuration = configFile;
+    public void setConfiguration(Configuration configuration) {
+        this.configuration = configuration;
     }
 
     @Override
@@ -37,6 +37,7 @@ public class UserAgent extends Agent {
             UserBehaviour userBehaviour = new UserBehaviour(this);
             addBehaviour(userBehaviour);
         } catch (FIPAException e) {
+            System.out.println("ERROR ACIERTO");
             myLogger.log(Logger.SEVERE, "Agent " + getLocalName() + " - Cannot register with DF", e);
             doDelete();
         }
