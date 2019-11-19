@@ -2,28 +2,23 @@ package behaviours;
 
 import agents.ManagerAgent;
 import jade.core.AID;
-import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.domain.DFService;
-import jade.domain.FIPAAgentManagement.AMSAgentDescription;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.SearchConstraints;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
-import jade.domain.FIPANames;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.UnreadableException;
 import utils.Configuration;
 
-import javax.crypto.Cipher;
 import java.io.Serializable;
-import java.util.Date;
 
 public class ManagerBehaviour extends CyclicBehaviour {
     private static final int INIT = 0;
     private static final int INIT_DONE = 1;
     private int state;
-    private AID userAID;
+    //private AID userAID;
     private ManagerAgent managerAgent;
 
     public ManagerBehaviour(ManagerAgent agent) {
@@ -36,13 +31,13 @@ public class ManagerBehaviour extends CyclicBehaviour {
     public void action() {
         switch (state) {
             case INIT:
-                userAID = getUserAID();
+                //userAID = getUserAID();
 
                 ACLMessage receivedMessage = myAgent.blockingReceive();
                 if (receivedMessage != null) {
                     switch (receivedMessage.getPerformative()) {
                         case ACLMessage.REQUEST:
-                            Serializable content = null;
+                            Serializable content;
                             try {
                                 content = receivedMessage.getContentObject();
                                 if (content != null) {
@@ -59,11 +54,13 @@ public class ManagerBehaviour extends CyclicBehaviour {
                                 reply.setPerformative(ACLMessage.NOT_UNDERSTOOD);
                                 myAgent.send(reply);
                             }
-
-                            managerAgent.createClassifiers();
+                            System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Accepted request to initialize classifiers");
+                            Boolean done = managerAgent.createClassifiers();
+                            //TODO: If done --> OK, else FAILURE?
                             ACLMessage reply = receivedMessage.createReply();
 
-                            reply.addReceiver(userAID);
+                            //reply.addReceiver(userAID);
+                            System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Init done");
                             reply.setPerformative(ACLMessage.INFORM);
                             myAgent.send(reply);
 
@@ -81,7 +78,7 @@ public class ManagerBehaviour extends CyclicBehaviour {
                 break;
         }
     }
-
+    /*
     private AID getUserAID() {
         AID userAID = null;
 
@@ -106,5 +103,5 @@ public class ManagerBehaviour extends CyclicBehaviour {
         } while (userAID == null);
         System.out.println("Found agent " + userAID.getName());
         return userAID;
-    }
+    }*/
 }

@@ -36,7 +36,6 @@ public class UserBehaviour extends CyclicBehaviour {
         switch (state) {
             case INIT:
                 managerAgent = getManagerAID();
-                System.out.println(INIT);
 
                 try {
 
@@ -45,33 +44,33 @@ public class UserBehaviour extends CyclicBehaviour {
                     msg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
                     // We want to receive a reply in 10 secs
                     msg.setReplyByDate(new Date(System.currentTimeMillis() + 10000));
-                    msg.setPerformative(ACLMessage.REQUEST);
+                    //msg.setPerformative(ACLMessage.REQUEST);
                     msg.setContentObject(userAgent.getConfiguration());
                     myAgent.send(msg);
                     ACLMessage received_message = myAgent.blockingReceive();
                     if (received_message != null) {
                         switch (received_message.getPerformative()) {
                             case ACLMessage.AGREE:
-                                System.out.println("Agree received");
+                                System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Received Message Agree from " + received_message.getSender().getLocalName());
                                 received_message = myAgent.blockingReceive();
                                 if (received_message != null) {
                                     switch (received_message.getPerformative()) {
                                         case ACLMessage.INFORM:
                                             //TODO: This is log, will be removed/changed in the future
-                                            System.out.println("Agent " + this.myAgent.getLocalName() + " - Received Message Inform from " + received_message.getSender().getLocalName());
-                                            System.out.println("Correct initialization.");
+                                            System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Received Message Inform from " + received_message.getSender().getLocalName());
+                                            System.out.println("Correct initialization");
                                             state = INIT_DONE;
                                             break;
                                         case ACLMessage.FAILURE:
                                             //TODO: This is log, will be removed/changed in the future
-                                            System.out.println("Agent " + this.myAgent.getLocalName() + " - Received Message Failure from " + received_message.getSender().getLocalName());
-                                            System.out.println("Failed to initialize the system.");
+                                            System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Received Message Failure from " + received_message.getSender().getLocalName());
+                                            System.out.println("Failed to initialize the system");
                                             break;
                                     }
                                 } else {
-                                    System.out.println("Agent " + this.myAgent.getLocalName() + " - Unexpected request [" + null + "] received from ");
+                                    System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Unexpected Message [" + null + "]");
                                 }
-                                System.out.println("Agent " + received_message.getSender().getName() + " successfully performed the requested action");
+                                System.out.println("Agent " + received_message.getSender().getLocalName() + " successfully performed the requested action");
                                 break;
                             case ACLMessage.REFUSE:
                                 System.out.println("REFUSE");
@@ -95,6 +94,7 @@ public class UserBehaviour extends CyclicBehaviour {
         }
     }
 
+    /*
     private void sendRefuse(ACLMessage msg, ACLMessage reply) {
         System.out.println("Agent " + this.myAgent.getLocalName() + " - Unexpected request [" + null + "] received from " + msg.getSender().getLocalName());
         reply.setPerformative(ACLMessage.REFUSE);
@@ -108,6 +108,7 @@ public class UserBehaviour extends CyclicBehaviour {
         reply.setContent("ACK");
         this.myAgent.send(reply);
     }
+    */
 
     private AID getManagerAID() {
         AID managerAID = null;

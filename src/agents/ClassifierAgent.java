@@ -1,6 +1,6 @@
 package agents;
 
-import behaviours.ManagerBehaviour;
+import behaviours.ClassifierBehaviour;
 import behaviours.UserBehaviour;
 import jade.core.Agent;
 import jade.domain.DFService;
@@ -8,38 +8,26 @@ import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
 import jade.util.Logger;
-import jade.wrapper.AgentContainer;
-import jade.wrapper.ControllerException;
-import jade.wrapper.StaleProxyException;
 import utils.Configuration;
 
-public class ManagerAgent extends Agent {
-
-    private Configuration configuration;
+public class ClassifierAgent extends Agent {
     private Logger myLogger = Logger.getMyLogger(getClass().getName());
-
-    public Configuration getConfiguration() {
-        return configuration;
-    }
-
-    public void setConfiguration(Configuration configuration) {
-        this.configuration = configuration;
-    }
 
     @Override
     protected void setup() {
+        System.out.println("Class here");
         // Registration with the DF
         DFAgentDescription dfd = new DFAgentDescription();
         ServiceDescription sd = new ServiceDescription();
-        sd.setType("agents.ManagerAgent");
+        sd.setType("agents.ClassifierAgent");
         sd.setName(getName());
         sd.setOwnership("IMAS");
         dfd.setName(getAID());
         dfd.addServices(sd);
         try {
             DFService.register(this, dfd);
-            ManagerBehaviour managerBehaviour = new ManagerBehaviour(this);
-            addBehaviour(managerBehaviour);
+            ClassifierBehaviour classifierBehaviour = new ClassifierBehaviour(this);
+            addBehaviour(classifierBehaviour);
         } catch (FIPAException e) {
             e.printStackTrace();
             myLogger.log(Logger.SEVERE, "Agent " + getLocalName() + " - Cannot register with DF", e);
@@ -56,25 +44,5 @@ public class ManagerAgent extends Agent {
             System.err.println("[" + getLocalName() + "]: NO S'HA POGUT ELIMINAR");
             e.printStackTrace();
         }
-    }
-
-    public Boolean createClassifiers() {
-        //TODO: Create classifiers
-        AgentContainer ac = this.getContainerController();
-        try {
-            //for (int i = 0; i < this.configuration.getClassifiers(); i++){
-            for (int i = 0; i < 3; i++){
-                ac.createNewAgent("Classifier_" + i, "agents.ClassifierAgent", new Object[0]);
-            }
-        } catch (StaleProxyException e) {
-            e.printStackTrace();
-            return false;
-        }
-        try {
-            ac.start();
-        } catch (ControllerException e) {
-            e.printStackTrace();
-        }
-        return true;
     }
 }
