@@ -33,15 +33,11 @@ public class UserBehaviour extends CyclicBehaviour {
 
     @Override
     public void action() {
-        System.out.println("IEAPAPA");
-        managerAgent = getManagerAID();
-
         switch (state) {
             case INIT:
+                managerAgent = getManagerAID();
                 System.out.println(INIT);
-                /*
-                 *
-                 * */
+
                 try {
 
                     ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
@@ -52,8 +48,8 @@ public class UserBehaviour extends CyclicBehaviour {
                     msg.setPerformative(ACLMessage.REQUEST);
                     msg.setContentObject(userAgent.getConfiguration());
                     myAgent.send(msg);
-                    ACLMessage  received_message = myAgent.blockingReceive();
-                    if(received_message != null) {
+                    ACLMessage received_message = myAgent.blockingReceive();
+                    if (received_message != null) {
                         switch (received_message.getPerformative()) {
                             case ACLMessage.AGREE:
                                 System.out.println("Agree received");
@@ -80,13 +76,22 @@ public class UserBehaviour extends CyclicBehaviour {
                             case ACLMessage.REFUSE:
                                 System.out.println("REFUSE");
                                 break;
+                            case ACLMessage.NOT_UNDERSTOOD:
+                                System.out.println("NOT UNDERSTOOD");
+                                break;
                         }
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
                 break;
-            case 2:
+            case INIT_DONE:
+                try {
+                    Thread.sleep(10000000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                break;
         }
     }
 
@@ -110,7 +115,7 @@ public class UserBehaviour extends CyclicBehaviour {
 
         DFAgentDescription dfd = new DFAgentDescription();
         ServiceDescription sd = new ServiceDescription();
-        sd.setType("PingAgent");
+        sd.setType("agents.ManagerAgent");
         dfd.addServices(sd);
 
         SearchConstraints c = new SearchConstraints();

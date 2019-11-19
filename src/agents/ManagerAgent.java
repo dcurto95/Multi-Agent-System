@@ -1,5 +1,6 @@
 package agents;
 
+import behaviours.ManagerBehaviour;
 import behaviours.UserBehaviour;
 import jade.core.Agent;
 import jade.domain.DFService;
@@ -9,7 +10,7 @@ import jade.domain.FIPAException;
 import jade.util.Logger;
 import utils.Configuration;
 
-public class UserAgent extends Agent {
+public class ManagerAgent extends Agent {
 
     private Configuration configuration;
     private Logger myLogger = Logger.getMyLogger(getClass().getName());
@@ -27,15 +28,15 @@ public class UserAgent extends Agent {
         // Registration with the DF
         DFAgentDescription dfd = new DFAgentDescription();
         ServiceDescription sd = new ServiceDescription();
-        sd.setType("agents.UserAgent");
+        sd.setType("agents.ManagerAgent");
         sd.setName(getName());
         sd.setOwnership("IMAS");
         dfd.setName(getAID());
         dfd.addServices(sd);
         try {
             DFService.register(this, dfd);
-            UserBehaviour userBehaviour = new UserBehaviour(this);
-            addBehaviour(userBehaviour);
+            ManagerBehaviour managerBehaviour = new ManagerBehaviour(this);
+            addBehaviour(managerBehaviour);
         } catch (FIPAException e) {
             e.printStackTrace();
             myLogger.log(Logger.SEVERE, "Agent " + getLocalName() + " - Cannot register with DF", e);
@@ -52,5 +53,9 @@ public class UserAgent extends Agent {
             System.err.println("[" + getLocalName() + "]: NO S'HA POGUT ELIMINAR");
             e.printStackTrace();
         }
+    }
+
+    public void createClassifiers() {
+        //TODO: Create classifiers
     }
 }
