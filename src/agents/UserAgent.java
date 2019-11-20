@@ -23,14 +23,10 @@ public class UserAgent extends Agent {
         return configuration;
     }
 
-    public void setConfiguration(Configuration configuration) {
-        this.configuration = configuration;
-    }
-
     @Override
     protected void setup() {
 
-        Configuration myConfig = new Configuration();
+        Configuration myConfig;
         try {
             myConfig = XmlParser.parseConfigFile("configuration.xml");
             this.configuration = myConfig;
@@ -53,14 +49,9 @@ public class UserAgent extends Agent {
                 doDelete();
             }
 
-        } catch (ParserConfigurationException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (SAXException e) {
+        } catch (ParserConfigurationException | IOException | SAXException e) {
             e.printStackTrace();
         }
-
     }
 
     @Override

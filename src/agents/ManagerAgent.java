@@ -16,10 +16,6 @@ public class ManagerAgent extends Agent {
     private Configuration configuration;
     private Logger myLogger = Logger.getMyLogger(getClass().getName());
 
-    public Configuration getConfiguration() {
-        return configuration;
-    }
-
     public void setConfiguration(Configuration configuration) {
         this.configuration = configuration;
     }

@@ -3,17 +3,13 @@ package behaviours;
 import agents.UserAgent;
 import jade.core.AID;
 import jade.core.behaviours.CyclicBehaviour;
-import jade.domain.AMSService;
 import jade.domain.DFService;
-import jade.domain.FIPAAgentManagement.AMSAgentDescription;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.SearchConstraints;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
 import jade.domain.FIPANames;
 import jade.lang.acl.ACLMessage;
-import jade.proto.AchieveREInitiator;
-import jade.util.Logger;
 
 import java.io.IOException;
 import java.util.Date;
@@ -97,7 +93,6 @@ public class UserBehaviour extends CyclicBehaviour {
 
     private AID getManagerAID() {
         AID managerAID = null;
-        AMSAgentDescription[] agents;
 
         DFAgentDescription dfd = new DFAgentDescription();
         ServiceDescription sd = new ServiceDescription();
