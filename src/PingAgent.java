@@ -50,7 +50,9 @@ public class PingAgent extends Agent {
 		}
 
 		public void action() {
-			ACLMessage  msg = myAgent.receive();
+			System.out.println("holi jeje");
+			ACLMessage  msg = myAgent.blockingReceive();
+			System.out.println("pong");
 			if(msg != null){
 				ACLMessage reply = msg.createReply();
 
@@ -59,6 +61,7 @@ public class PingAgent extends Agent {
 					if ((content != null) && (content.indexOf("ping") != -1)){
 						myLogger.log(Logger.INFO, "Agent "+getLocalName()+" - Received PING Request from "+msg.getSender().getLocalName());
 						reply.setPerformative(ACLMessage.INFORM);
+						System.out.println("pong");
 						reply.setContent("pong");
 					}
 					else{
