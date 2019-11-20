@@ -20,6 +20,8 @@ public class ManagerAgent extends Agent {
         this.configuration = configuration;
     }
 
+    public Configuration getConfiguration() {return this.configuration;}
+
     @Override
     protected void setup() {
         // Registration with the DF

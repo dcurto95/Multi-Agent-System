@@ -54,7 +54,6 @@ public class UserBehaviour extends CyclicBehaviour {
                                         case ACLMessage.INFORM:
                                             //TODO: This is log, will be removed/changed in the future
                                             System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Received Message Inform from " + received_message.getSender().getLocalName());
-                                            System.out.println("Correct initialization");
                                             state = INIT_DONE;
                                             break;
                                         case ACLMessage.FAILURE:
@@ -66,7 +65,7 @@ public class UserBehaviour extends CyclicBehaviour {
                                 } else {
                                     System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Unexpected Message [" + null + "]");
                                 }
-                                System.out.println("Agent " + received_message.getSender().getLocalName() + " successfully performed the requested action");
+                                System.out.println("Agent " + this.myAgent.getLocalName() + " >>> " + received_message.getSender().getLocalName() + " successfully performed the requested Init action");
                                 break;
                             case ACLMessage.REFUSE:
                                 System.out.println("REFUSE");
@@ -113,7 +112,7 @@ public class UserBehaviour extends CyclicBehaviour {
                 break;
             }
         } while (managerAID == null);
-        System.out.println("Found agent " + managerAID.getName());
+        System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Found agent " + managerAID.getLocalName());
         return managerAID;
     }
 }

@@ -1,13 +1,7 @@
 package behaviours;
 
 import agents.ManagerAgent;
-import jade.core.AID;
 import jade.core.behaviours.CyclicBehaviour;
-import jade.domain.DFService;
-import jade.domain.FIPAAgentManagement.DFAgentDescription;
-import jade.domain.FIPAAgentManagement.SearchConstraints;
-import jade.domain.FIPAAgentManagement.ServiceDescription;
-import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.UnreadableException;
 import utils.Configuration;
@@ -56,20 +50,28 @@ public class ManagerBehaviour extends CyclicBehaviour {
                             }
                             System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Accepted request to initialize classifiers");
                             Boolean done = managerAgent.createClassifiers();
-                            ACLMessage reply = receivedMessage.createReply();
 
-                            //reply.addReceiver(userAID);
-                            if (done){
-                                System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Init done");
-                                reply.setPerformative(ACLMessage.INFORM);
-                                myAgent.send(reply);
-                                state = INIT_DONE;
+                            //TODO: Check cases
+                            ACLMessage fromClassifier;
+                            for (int i = 0; i < this.managerAgent.getConfiguration().getClassifiers(); i++){
+                                fromClassifier = myAgent.blockingReceive();
+                                if (fromClassifier.getPerformative() == ACLMessage.INFORM && fromClassifier.getContent() != null){
+                                    System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Classifier " + fromClassifier.getContent() + " created");
+                                }
                             }
-                            else{
-                                reply.setPerformative(ACLMessage.FAILURE);
-                                myAgent.send(reply);
-                            }
-                            break;
+                        ACLMessage reply = receivedMessage.createReply();
+
+                        //reply.addReceiver(userAID);
+                        if (done) {
+                            System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Init done");
+                            reply.setPerformative(ACLMessage.INFORM);
+                            myAgent.send(reply);
+                            state = INIT_DONE;
+                        } else {
+                            reply.setPerformative(ACLMessage.FAILURE);
+                            myAgent.send(reply);
+                        }
+                        break;
                     }
                 }
                 break;
