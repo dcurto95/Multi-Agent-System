@@ -20,6 +20,8 @@ public class Configuration implements Serializable {
         this.file = file;
     }
 
+    public  Configuration(){}
+
     public String getTitle() {
         return title;
     }

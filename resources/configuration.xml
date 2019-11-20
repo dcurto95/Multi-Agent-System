@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<SimulationSettings>
+    <title>IMAS_basic_simulation</title>
+    <algorithm>J48</algorithm>
+    <classifiers>2</classifiers>
+    <trainingSettings>80,80</trainingSettings>
+    <classifyInstances>5</classifyInstances>
+    <file>fertility_Diagnosis_train.arff</file>
+</SimulationSettings>

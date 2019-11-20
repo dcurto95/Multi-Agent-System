@@ -59,8 +59,7 @@ public class ManagerAgent extends Agent {
     public Boolean createClassifiers() {
         AgentContainer ac = this.getContainerController();
         try {
-            //for (int i = 0; i < this.configuration.getClassifiers(); i++){
-            for (int i = 0; i < 3; i++){
+            for (int i = 0; i < this.configuration.getClassifiers(); i++){
                 ac.createNewAgent("Classifier_" + i, "agents.ClassifierAgent", new Object[0]).start();
             }
         } catch (StaleProxyException e) {
