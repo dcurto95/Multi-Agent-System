@@ -12,7 +12,9 @@ import utils.Configuration;
 import utils.XmlParser;
 
 import javax.xml.parsers.ParserConfigurationException;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 
 public class UserAgent extends Agent {
 
@@ -63,5 +65,17 @@ public class UserAgent extends Agent {
             System.err.println("[" + getLocalName() + "]: NO S'HA POGUT ELIMINAR");
             e.printStackTrace();
         }
+    }
+
+    public String readUserInput() throws IOException {
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        // Read and process lines from console
+        String input;
+        while (br.ready()) {
+            br.readLine();
+        }
+        System.out.println("Select train (T) or predict (P):");
+        input = br.readLine();
+        return input.toUpperCase();
     }
 }

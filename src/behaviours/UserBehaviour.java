@@ -1,8 +1,8 @@
 package behaviours;
 
 import agents.UserAgent;
+import communication_protocols.FIPARequester;
 import jade.core.AID;
-import jade.core.behaviours.CyclicBehaviour;
 import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.SearchConstraints;
@@ -14,7 +14,7 @@ import jade.lang.acl.ACLMessage;
 import java.io.IOException;
 import java.util.Date;
 
-public class UserBehaviour extends CyclicBehaviour {
+public class UserBehaviour extends FIPARequester {
     private static final int INIT = 0;
     private static final int INIT_DONE = 1;
     private int state;
@@ -40,52 +40,78 @@ public class UserBehaviour extends CyclicBehaviour {
                     msg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
                     // We want to receive a reply in 10 secs
                     msg.setReplyByDate(new Date(System.currentTimeMillis() + 10000));
-                    //msg.setPerformative(ACLMessage.REQUEST);
+
                     msg.setContentObject(userAgent.getConfiguration());
-                    myAgent.send(msg);
-                    ACLMessage received_message = myAgent.blockingReceive();
-                    if (received_message != null) {
-                        switch (received_message.getPerformative()) {
-                            case ACLMessage.AGREE:
-                                System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Received Message Agree from " + received_message.getSender().getLocalName());
-                                received_message = myAgent.blockingReceive();
-                                if (received_message != null) {
-                                    switch (received_message.getPerformative()) {
-                                        case ACLMessage.INFORM:
-                                            //TODO: This is log, will be removed/changed in the future
-                                            System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Received Message Inform from " + received_message.getSender().getLocalName());
-                                            state = INIT_DONE;
-                                            break;
-                                        case ACLMessage.FAILURE:
-                                            //TODO: This is log, will be removed/changed in the future
-                                            System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Received Message Failure from " + received_message.getSender().getLocalName());
-                                            System.out.println("Failed to initialize the system");
-                                            break;
-                                    }
-                                } else {
-                                    System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Unexpected Message [" + null + "]");
-                                }
-                                System.out.println("Agent " + this.myAgent.getLocalName() + " >>> " + received_message.getSender().getLocalName() + " successfully performed the requested Init action");
-                                break;
-                            case ACLMessage.REFUSE:
-                                System.out.println("REFUSE");
-                                break;
-                            case ACLMessage.NOT_UNDERSTOOD:
-                                System.out.println("NOT UNDERSTOOD");
-                                break;
-                        }
-                    }
+                    agent.send(msg);
+                    receiveMessageInFipaProtocol();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
                 break;
             case INIT_DONE:
-                try {
-                    Thread.sleep(10000000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                boolean correctInput = true;
+                String userInput = null;
+                do {
+                    try {
+                        userInput = userAgent.readUserInput();
+
+                        switch (userInput) {
+                            case "T":
+                                correctInput = true;
+                                break;
+                            case "P":
+                                correctInput = true;
+                                System.out.println("Predicting");
+                                break;
+                            default:
+                                correctInput = false;
+                                System.out.println("Wrong input, only T or P accepted");
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                } while (!correctInput);
+
+                System.out.println("Training");
+
+                ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
+                msg.addReceiver(managerAgent);
+                msg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
+                // We want to receive a reply in 10 secs
+                msg.setReplyByDate(new Date(System.currentTimeMillis() + 10000));
+                msg.setContent(userInput);
+                agent.send(msg);
+
+                receiveMessageInFipaProtocol();
                 break;
+        }
+    }
+
+    @Override
+    protected void doNotUnderstood() {
+        System.out.println("NOT UNDERSTOOD");
+    }
+
+    @Override
+    protected void doRefuse() {
+        System.out.println("REFUSE");
+    }
+
+    @Override
+    protected void doFailure(ACLMessage receivedMessage) {
+        //TODO: This is log, will be removed/changed in the future
+        System.out.println("Agent " + this.agent.getLocalName() + " >>> Received Message Failure from " + receivedMessage.getSender().getLocalName());
+        System.out.println("Failed to initialize the system");
+    }
+
+    @Override
+    protected void doInform(ACLMessage receivedMessage) {
+        //TODO: This is log, will be removed/changed in the future
+        System.out.println("Agent " + this.agent.getLocalName() + " >>> Received Message Inform from " + receivedMessage.getSender().getLocalName());
+        if (state == INIT) {
+            state = INIT_DONE;
+        } else {
+            System.out.println(receivedMessage.getContent());
         }
     }
 
@@ -103,7 +129,7 @@ public class UserBehaviour extends CyclicBehaviour {
 
         do {
             try {
-                DFAgentDescription[] result = DFService.search(this.myAgent, dfd, c);
+                DFAgentDescription[] result = DFService.search(this.agent, dfd, c);
                 if (result.length > 0) {
                     managerAID = result[0].getName();
                 }
@@ -112,7 +138,7 @@ public class UserBehaviour extends CyclicBehaviour {
                 break;
             }
         } while (managerAID == null);
-        System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Found agent " + managerAID.getLocalName());
+        System.out.println("Agent " + this.agent.getLocalName() + " >>> Found agent " + managerAID.getLocalName());
         return managerAID;
     }
 }

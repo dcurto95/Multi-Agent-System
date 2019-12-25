@@ -7,9 +7,15 @@ import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
 import jade.util.Logger;
+import weka.core.Instances;
 
 public class ClassifierAgent extends Agent {
     private Logger myLogger = Logger.getMyLogger(getClass().getName());
+    private Instances trainingData;
+
+    public void setTrainingData(Instances trainingData) {
+        this.trainingData = trainingData;
+    }
 
     @Override
     protected void setup() {
