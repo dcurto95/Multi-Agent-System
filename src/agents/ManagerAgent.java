@@ -1,6 +1,7 @@
 package agents;
 
 import behaviours.ManagerBehaviour;
+import jade.core.AID;
 import jade.core.Agent;
 import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
@@ -16,6 +17,8 @@ import weka.core.converters.ArffLoader.ArffReader;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class ManagerAgent extends Agent {
 
@@ -23,6 +26,7 @@ public class ManagerAgent extends Agent {
     private Logger myLogger = Logger.getMyLogger(getClass().getName());
     private Instances[] classifiersTrainData;
     private Instances testData;
+    private Map<AID, List<Double>> classifierPredictions;
 
     public Instances[] getClassifiersTrainData() {
         return classifiersTrainData;
@@ -50,6 +54,7 @@ public class ManagerAgent extends Agent {
 
     @Override
     protected void setup() {
+        classifierPredictions = new HashMap<>();
         // Registration with the DF
         DFAgentDescription dfd = new DFAgentDescription();
         ServiceDescription sd = new ServiceDescription();
@@ -115,10 +120,6 @@ public class ManagerAgent extends Agent {
         return trainingSets;
     }
 
-    public void predictClassifiers() {
-        //TODO
-    }
-
     public void readDatasetFile() {
         try {
             BufferedReader reader =
@@ -130,9 +131,50 @@ public class ManagerAgent extends Agent {
             int trainSize = data.numInstances() - configuration.getClassifyInstances();
             Instances trainData = new Instances(data, 0, trainSize);
             setTestData(new Instances(data, trainSize, configuration.getClassifyInstances()));
+            System.out.println("TRUTH:");
+            for (int i = 0; i < testData.numInstances(); i++) {
+                System.out.println(testData.instance(i).classValue());
+            }
             setClassifiersTrainData(createTrainingSubset(configuration.getTrainingSettings(), trainData));
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public void setPrediction(AID sender, List<Double> predictions) {
+        classifierPredictions.put(sender, predictions);
+    }
+
+    public List<Double> votePredictions() {
+        //TODO Improve
+        List<Double> finalPrediction = new ArrayList<>();
+        List<List<Double>> votes = new ArrayList<>(classifierPredictions.values());
+
+        for (int i = 0; i < votes.get(0).size(); i++) {
+            Map<Double, Integer> options = new HashMap<>();
+
+            int maxVote = 0;
+            for (List<Double> agentVotes : votes) {
+                Double agentVote = agentVotes.get(i);
+                if (!options.containsKey(agentVote)) {
+                    options.put(agentVote, 0);
+                }
+                int newVote = options.get(agentVote);
+                if (newVote > maxVote) {
+                    maxVote = newVote;
+                }
+                options.put(agentVote, newVote);
+            }
+
+            int finalMaxVote = maxVote;
+            List<Double> mostVotedOptions = options.entrySet()
+                    .stream()
+                    .filter(entry -> Objects.equals(entry.getValue(), finalMaxVote))
+                    .map(Map.Entry::getKey)
+                    .collect(Collectors.toList());
+
+            finalPrediction.add(mostVotedOptions.get(0));
+        }
+        return finalPrediction;
     }
 }

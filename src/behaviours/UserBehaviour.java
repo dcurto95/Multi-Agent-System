@@ -10,6 +10,7 @@ import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
 import jade.domain.FIPANames;
 import jade.lang.acl.ACLMessage;
+import jade.lang.acl.UnreadableException;
 
 import java.io.IOException;
 import java.util.Date;
@@ -17,6 +18,8 @@ import java.util.Date;
 public class UserBehaviour extends FIPARequester {
     private static final int INIT = 0;
     private static final int INIT_DONE = 1;
+    private static final int TRAIN = 2;
+    private static final int PREDICT = 3;
     private int state;
     private AID managerAgent;
     private UserAgent userAgent;
@@ -29,6 +32,8 @@ public class UserBehaviour extends FIPARequester {
 
     @Override
     public void action() {
+        String userInput = null;
+
         switch (state) {
             case INIT:
                 managerAgent = getManagerAID();
@@ -50,7 +55,6 @@ public class UserBehaviour extends FIPARequester {
                 break;
             case INIT_DONE:
                 boolean correctInput = true;
-                String userInput = null;
                 do {
                     try {
                         userInput = userAgent.readUserInput();
@@ -58,8 +62,11 @@ public class UserBehaviour extends FIPARequester {
                         switch (userInput) {
                             case "T":
                                 correctInput = true;
+                                state = TRAIN;
+                                System.out.println("Training");
                                 break;
                             case "P":
+                                state = PREDICT;
                                 correctInput = true;
                                 System.out.println("Predicting");
                                 break;
@@ -72,8 +79,8 @@ public class UserBehaviour extends FIPARequester {
                     }
                 } while (!correctInput);
 
-                System.out.println("Training");
-
+            case TRAIN:
+            case PREDICT:
                 ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
                 msg.addReceiver(managerAgent);
                 msg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
@@ -83,6 +90,7 @@ public class UserBehaviour extends FIPARequester {
                 agent.send(msg);
 
                 receiveMessageInFipaProtocol();
+                state = INIT_DONE;
                 break;
         }
     }
@@ -101,17 +109,39 @@ public class UserBehaviour extends FIPARequester {
     protected void doFailure(ACLMessage receivedMessage) {
         //TODO: This is log, will be removed/changed in the future
         System.out.println("Agent " + this.agent.getLocalName() + " >>> Received Message Failure from " + receivedMessage.getSender().getLocalName());
-        System.out.println("Failed to initialize the system");
+        switch (state) {
+            case INIT:
+                System.out.println("Failed to initialize the system");
+                break;
+            case TRAIN:
+                System.out.println("Failed to train the model.");
+                break;
+            case PREDICT:
+                System.out.println("The model hasn't been trained yet.");
+                break;
+        }
     }
 
     @Override
     protected void doInform(ACLMessage receivedMessage) {
         //TODO: This is log, will be removed/changed in the future
         System.out.println("Agent " + this.agent.getLocalName() + " >>> Received Message Inform from " + receivedMessage.getSender().getLocalName());
-        if (state == INIT) {
-            state = INIT_DONE;
-        } else {
-            System.out.println(receivedMessage.getContent());
+        switch (state) {
+            case INIT:
+                state = INIT_DONE;
+                break;
+            case TRAIN:
+                System.out.println("Correctly trained the data.");
+                break;
+            case PREDICT:
+                //TODO get content and print prediction
+                try {
+                    System.out.println("Prediction finished.");
+                    System.out.println(receivedMessage.getContentObject().toString());
+                } catch (UnreadableException e) {
+                    e.printStackTrace();
+                }
+                break;
         }
     }
 

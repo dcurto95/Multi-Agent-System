@@ -30,6 +30,10 @@ public abstract class FIPARequester extends CyclicBehaviour {
                         switch (receivedMessage.getPerformative()) {
                             case ACLMessage.INFORM:
                                 doInform(receivedMessage);
+                                System.out.println(String.format(
+                                        AGENT_S_S_SUCCESSFULLY_PERFORMED_THE_REQUESTED_ACTION,
+                                        this.agent.getLocalName(),
+                                        receivedMessage.getSender().getLocalName()));
                                 break;
                             case ACLMessage.FAILURE:
                                 doFailure(receivedMessage);
@@ -37,10 +41,6 @@ public abstract class FIPARequester extends CyclicBehaviour {
                             default:
                                 System.out.println(PERFORMATIVE_NOT_UNDERSTOOD);
                         }
-                        System.out.println(String.format(
-                                AGENT_S_S_SUCCESSFULLY_PERFORMED_THE_REQUESTED_ACTION,
-                                this.agent.getLocalName(),
-                                receivedMessage.getSender().getLocalName()));
                     } else {
                         System.out.println(String.format(AGENT_S_UNEXPECTED_MESSAGE_NULL, this.agent.getLocalName()));
                     }

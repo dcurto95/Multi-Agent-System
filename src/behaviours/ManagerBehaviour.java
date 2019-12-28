@@ -6,6 +6,7 @@ import jade.core.AID;
 import jade.domain.FIPANames;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.UnreadableException;
+import utils.ClassifierConfig;
 import utils.Configuration;
 import weka.core.Instances;
 
@@ -18,15 +19,19 @@ import java.util.List;
 public class ManagerBehaviour extends FIPAMultipleTargetRequester {
     private static final int INIT = 0;
     private static final int INIT_DONE = 1;
+    private static final int TRAIN = 2;
+    private static final int PREDICT = 3;
     private int state;
     private ManagerAgent managerAgent;
     private List<AID> classifierAIDList;
+    private ACLMessage reply;
 
     public ManagerBehaviour(ManagerAgent agent) {
         super(agent);
         this.managerAgent = agent;
         this.state = INIT;
         this.classifierAIDList = new ArrayList<>();
+        this.reply = null;
     }
 
     @Override
@@ -45,13 +50,13 @@ public class ManagerBehaviour extends FIPAMultipleTargetRequester {
                                     managerAgent.setConfiguration((Configuration) content);
                                 }
 
-                                ACLMessage reply = receivedMessage.createReply();
+                                reply = receivedMessage.createReply();
                                 reply.setPerformative(ACLMessage.AGREE);
                                 myAgent.send(reply);
                             } catch (UnreadableException e) {
                                 e.printStackTrace();
 
-                                ACLMessage reply = receivedMessage.createReply();
+                                reply = receivedMessage.createReply();
                                 reply.setPerformative(ACLMessage.NOT_UNDERSTOOD);
                                 myAgent.send(reply);
                             }
@@ -62,44 +67,92 @@ public class ManagerBehaviour extends FIPAMultipleTargetRequester {
                             this.setTargetsAIDs(this.classifierAIDList);
                             managerAgent.readDatasetFile();
 
-                            ACLMessage reply = receivedMessage.createReply();
-                            boolean done = true;
-                            if (done) {
-                                System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Init done");
-                                reply.setPerformative(ACLMessage.INFORM);
-                                myAgent.send(reply);
-                                state = INIT_DONE;
-                            } else {
-                                reply.setPerformative(ACLMessage.FAILURE);
-                                myAgent.send(reply);
-                            }
+                            System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Init done");
+
+                            reply = receivedMessage.createReply();
+                            reply.setPerformative(ACLMessage.INFORM);
+                            myAgent.send(reply);
+                            state = INIT_DONE;
                             break;
                     }
                 }
                 break;
             case INIT_DONE:
                 receivedMessage = myAgent.blockingReceive();
-                if (receivedMessage != null) {
-                    switch (receivedMessage.getPerformative()) {
-                        case ACLMessage.REQUEST:
-                            String content = receivedMessage.getContent();
-                            if (content != null) {
-                                if (content.equals("T")) {
-                                    sendTrainingDataToClassifiers();
-                                    receiveAllTargetsMessagesInFipaProtocol();
-                                } else if (content.equals("P")) {
-                                    managerAgent.predictClassifiers();
-                                }
-                            }
+                if (receivedMessage != null && receivedMessage.getPerformative() == ACLMessage.REQUEST) {
+                    String content = receivedMessage.getContent();
+                    reply = receivedMessage.createReply();
 
+                    if (content != null) {
+                        if (content.equals("T")) {
+                            state = TRAIN;
+                        } else if (content.equals("P")) {
+                            state = PREDICT;
+                        }
+                        reply.setPerformative(ACLMessage.AGREE);
+                        myAgent.send(reply);
                     }
                 }
-                try {
-                    Thread.sleep(10000000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
                 break;
+            case TRAIN:
+                sendTrainingDataToClassifiers();
+
+                boolean allOk = receiveAllTargetsMessagesInFipaProtocol();
+                if (allOk) {
+                    System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Training done");
+                    reply.setPerformative(ACLMessage.INFORM);
+                    myAgent.send(reply);
+                } else {
+                    System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Training Failed");
+                    reply.setPerformative(ACLMessage.FAILURE);
+                    myAgent.send(reply);
+                }
+                state = INIT_DONE;
+                break;
+            case PREDICT:
+                sendPredictDataToClassifiers();
+                allOk = receiveAllTargetsMessagesInFipaProtocol();
+                if (allOk) {
+                    List<Double> predictions = managerAgent.votePredictions();
+                    System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Predict done");
+                    reply.setPerformative(ACLMessage.INFORM);
+                    try {
+                        reply.setContentObject((ArrayList) predictions);
+                        myAgent.send(reply);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Predict Failed");
+                    reply.setPerformative(ACLMessage.FAILURE);
+                    myAgent.send(reply);
+                }
+                state = INIT_DONE;
+                break;
+        }
+
+    }
+
+    private void sendPredictDataToClassifiers() {
+        Instances testData = managerAgent.getTestData();
+
+        for (AID aClassifierAIDList : classifierAIDList) {
+            ClassifierConfig classifierConfig = new ClassifierConfig(
+                    managerAgent.getConfiguration().getAlgorithm(),
+                    "P",
+                    testData);
+            ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
+            msg.addReceiver(aClassifierAIDList);
+            msg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
+            // We want to receive a reply in 10 secs
+            msg.setReplyByDate(new Date(System.currentTimeMillis() + 10000));
+
+            try {
+                msg.setContentObject(classifierConfig);
+                myAgent.send(msg);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -107,6 +160,10 @@ public class ManagerBehaviour extends FIPAMultipleTargetRequester {
         Instances[] classifiersTrainData = managerAgent.getClassifiersTrainData();
 
         for (int i = 0; i < classifierAIDList.size(); i++) {
+            ClassifierConfig classifierConfig = new ClassifierConfig(
+                    managerAgent.getConfiguration().getAlgorithm(),
+                    "T",
+                    classifiersTrainData[i]);
             ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
             msg.addReceiver(classifierAIDList.get(i));
             msg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
@@ -114,7 +171,7 @@ public class ManagerBehaviour extends FIPAMultipleTargetRequester {
             msg.setReplyByDate(new Date(System.currentTimeMillis() + 10000));
 
             try {
-                msg.setContentObject(classifiersTrainData[i]);
+                msg.setContentObject(classifierConfig);
                 myAgent.send(msg);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -152,43 +209,30 @@ public class ManagerBehaviour extends FIPAMultipleTargetRequester {
     protected void doFailure(ACLMessage receivedMessage) {
         //TODO: This is log, will be removed/changed in the future
         System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Received Message Failure from " + receivedMessage.getSender().getLocalName());
-        System.out.println("Failed to initialize the system");
+        switch (state) {
+            case INIT:
+                System.out.println("Failed to initialize the system");
+                break;
+        }
     }
 
     @Override
     protected void doInform(ACLMessage receivedMessage) {
         //TODO: This is log, will be removed/changed in the future
         System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Received Message Inform from " + receivedMessage.getSender().getLocalName());
-        if (state == INIT) {
-            state = INIT_DONE;
-        } else {
-            System.out.println(receivedMessage.getContent());
+        switch (state) {
+            case INIT:
+                state = INIT_DONE;
+                break;
+            case PREDICT:
+                try {
+                    managerAgent.setPrediction(
+                            receivedMessage.getSender(),
+                            (List<Double>) receivedMessage.getContentObject());
+                } catch (UnreadableException e) {
+                    e.printStackTrace();
+                }
+                break;
         }
     }
-    /*
-    private AID getUserAID() {
-        AID userAID = null;
-
-        DFAgentDescription dfd = new DFAgentDescription();
-        ServiceDescription sd = new ServiceDescription();
-        sd.setType("agents.UserAgent");
-        dfd.addServices(sd);
-
-        SearchConstraints c = new SearchConstraints();
-        c.setMaxResults((long) -1);
-
-        do {
-            try {
-                DFAgentDescription[] result = DFService.search(this.agent, dfd, c);
-                if (result.length > 0) {
-                    userAID = result[0].getName();
-                }
-            } catch (FIPAException e) {
-                e.printStackTrace();
-                break;
-            }
-        } while (userAID == null);
-        System.out.println("Found agent " + userAID.getName());
-        return userAID;
-    }*/
 }

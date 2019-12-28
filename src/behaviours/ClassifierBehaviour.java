@@ -10,10 +10,12 @@ import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.UnreadableException;
+import utils.ClassifierConfig;
 import weka.core.Instances;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.List;
 
 
 public class ClassifierBehaviour extends CyclicBehaviour {
@@ -48,41 +50,78 @@ public class ClassifierBehaviour extends CyclicBehaviour {
                 break;
             case INIT_DONE:
                 ACLMessage receivedMessage = myAgent.blockingReceive();
-                if (receivedMessage != null) {
-                    switch (receivedMessage.getPerformative()) {
-                        case ACLMessage.REQUEST:
-                            Serializable content;
-                            try {
-                                content = receivedMessage.getContentObject();
-                                if (content != null) {
-                                    classifierAgent.setTrainingData((Instances) content);
-                                    //TODO: Temporal Log, remove or use Logger
-                                    System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Received Training Data");
+                if (receivedMessage != null && receivedMessage.getPerformative() == ACLMessage.REQUEST) {
+                    Serializable content;
+                    try {
+                        content = receivedMessage.getContentObject();
+                        if (content != null) {
+                            ClassifierConfig classifierConfig = (ClassifierConfig) content;
 
-                                    ACLMessage reply = receivedMessage.createReply();
-                                    reply.setPerformative(ACLMessage.AGREE);
-                                    myAgent.send(reply);
-                                } else {
-                                    ACLMessage reply = receivedMessage.createReply();
-                                    reply.setPerformative(ACLMessage.REFUSE);
-                                    myAgent.send(reply);
-                                }
+                            ACLMessage reply = receivedMessage.createReply();
+                            reply.setPerformative(ACLMessage.AGREE);
+                            myAgent.send(reply);
 
-                            } catch (UnreadableException e) {
-                                e.printStackTrace();
-
-                                ACLMessage reply = receivedMessage.createReply();
-                                reply.setPerformative(ACLMessage.NOT_UNDERSTOOD);
-                                myAgent.send(reply);
+                            if (classifierConfig.getAction().equals("T")) {
+                                trainAgent(receivedMessage, classifierConfig);
+                            } else {
+                                predictAgent(receivedMessage, classifierConfig);
                             }
-                            //TODO: Tell the agent to train and INFORM the manager when finished
+                        } else {
+                            ACLMessage reply = receivedMessage.createReply();
+                            reply.setPerformative(ACLMessage.REFUSE);
+                            myAgent.send(reply);
+                        }
+
+                    } catch (UnreadableException e) {
+                        e.printStackTrace();
+
+                        ACLMessage reply = receivedMessage.createReply();
+                        reply.setPerformative(ACLMessage.NOT_UNDERSTOOD);
+                        myAgent.send(reply);
                     }
                 }
-                try {
-                    Thread.sleep(10000000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+        }
+    }
+
+    private void predictAgent(ACLMessage receivedMessage, ClassifierConfig classifierConfig) {
+        ACLMessage reply;//TODO: Temporal Log, remove or use Logger
+        System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Received Predict Data");
+
+        List<Double> predictions = classifierAgent.predict(classifierConfig);
+        if (!predictions.isEmpty()) {
+            //INFORM
+            reply = receivedMessage.createReply();
+            reply.setPerformative(ACLMessage.INFORM);
+            try {
+                reply.setContentObject((Serializable) predictions);
+                myAgent.send(reply);
+            } catch (IOException e) {
+                e.printStackTrace();
+                reply.setPerformative(ACLMessage.FAILURE);
+                myAgent.send(reply);
+            }
+        } else {
+            //FAILURE
+            reply = receivedMessage.createReply();
+            reply.setPerformative(ACLMessage.FAILURE);
+            myAgent.send(reply);
+        }
+    }
+
+    private void trainAgent(ACLMessage receivedMessage, ClassifierConfig classifierConfig) {
+        ACLMessage reply;//TODO: Temporal Log, remove or use Logger
+        System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Received Training Data");
+
+        if (classifierAgent.train(classifierConfig)) {
+            //INFORM
+            reply = receivedMessage.createReply();
+            reply.setPerformative(ACLMessage.INFORM);
+            myAgent.send(reply);
+        } else {
+            //FAILURE
+            reply = receivedMessage.createReply();
+            reply.setPerformative(ACLMessage.FAILURE);
+            myAgent.send(reply);
         }
     }
 

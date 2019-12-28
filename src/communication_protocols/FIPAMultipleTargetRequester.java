@@ -40,7 +40,7 @@ public abstract class FIPAMultipleTargetRequester extends CyclicBehaviour {
      * Receives all type of ACLMessage controlling their senders.
      * Finishes when all targets are in a final state: INFORM, FAILURE, REFUSE or NOT_UNDERSTOOD
      */
-    protected void receiveAllTargetsMessagesInFipaProtocol() {
+    protected boolean receiveAllTargetsMessagesInFipaProtocol() {
         do {
             ACLMessage receivedMessage = agent.blockingReceive();
             if (receivedMessage != null) {
@@ -85,6 +85,20 @@ public abstract class FIPAMultipleTargetRequester extends CyclicBehaviour {
                 System.out.println(String.format(AGENT_S_UNEXPECTED_MESSAGE_NULL, this.agent.getLocalName()));
             }
         } while (!allTargetsFinished());
+
+        return allTargetsOkay();
+    }
+
+    /**
+     * Checks if all targets finished correctly their task
+     *
+     * @return True if all targets finished correctly their task, false otherwise.
+     */
+    private boolean allTargetsOkay() {
+        for (Map.Entry<AID, Integer> entry : targetLastMessageMap.entrySet()) {
+            if (entry.getValue() != ACLMessage.INFORM) return false;
+        }
+        return true;
     }
 
     /**
