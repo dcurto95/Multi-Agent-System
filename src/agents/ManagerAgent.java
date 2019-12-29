@@ -146,7 +146,7 @@ public class ManagerAgent extends Agent {
         for (int i = 0; i < trainingSettings.length; i++) {
             int trainSize = trainingSettings[i];
 
-            trainData.randomize(new java.util.Random(0));
+            trainData.randomize(new java.util.Random());
             Instances classifierData;
             if ((lastInstance + trainSize) < dataLength) {
                 classifierData = new Instances(trainData, lastInstance, trainSize);
