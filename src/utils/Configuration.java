@@ -1,7 +1,6 @@
 package utils;
 
 import java.io.Serializable;
-import java.util.List;
 
 public class Configuration implements Serializable {
     private String title;
@@ -20,7 +19,8 @@ public class Configuration implements Serializable {
         this.file = file;
     }
 
-    public  Configuration(){}
+    public Configuration() {
+    }
 
     public String getTitle() {
         return title;

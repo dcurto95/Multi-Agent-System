@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+
 public class XmlParser {
 
     public static Configuration parseConfigFile(String fileName) throws ParserConfigurationException, IOException, SAXException {
@@ -24,18 +25,18 @@ public class XmlParser {
         Element root = document.getDocumentElement();
         configFile.setTitle(root.getElementsByTagName("title").item(0).getTextContent());
         configFile.setAlgorithm(root.getElementsByTagName("algorithm").item(0).getTextContent());
-        configFile.setClassifiers(Integer.parseInt(root.getElementsByTagName("classifiers").item(0).getTextContent()) );
+        configFile.setClassifiers(Integer.parseInt(root.getElementsByTagName("classifiers").item(0).getTextContent()));
         List<String> trainingSettingsList = Arrays.asList(root.getElementsByTagName("trainingSettings").item(0).getTextContent().split(","));
 
         int[] list = new int[trainingSettingsList.size()];
-        for (int i = 0; i < trainingSettingsList.size(); i++){
+        for (int i = 0; i < trainingSettingsList.size(); i++) {
             list[i] = Integer.parseInt(trainingSettingsList.get(i));
         }
         configFile.setTrainingSettings(list);
-        configFile.setClassifyInstances(Integer.parseInt(root.getElementsByTagName("classifyInstances").item(0).getTextContent()) );
+        configFile.setClassifyInstances(Integer.parseInt(root.getElementsByTagName("classifyInstances").item(0).getTextContent()));
         configFile.setFile(root.getElementsByTagName("file").item(0).getTextContent());
 
-        return  configFile;
+        return configFile;
 
 
     }

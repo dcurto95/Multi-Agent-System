@@ -9,12 +9,14 @@ import jade.domain.FIPAException;
 import jade.util.Logger;
 import utils.ClassifierConfig;
 import weka.classifiers.Classifier;
-import weka.classifiers.Evaluation;
 import weka.classifiers.trees.J48;
 import weka.core.Instances;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.FileHandler;
+import java.util.logging.SimpleFormatter;
 
 public class ClassifierAgent extends Agent {
     private Logger myLogger = Logger.getMyLogger(getClass().getName());
@@ -23,6 +25,7 @@ public class ClassifierAgent extends Agent {
     @Override
     protected void setup() {
         classifier = null;
+        setupLogger();
         // Registration with the DF
         DFAgentDescription dfd = new DFAgentDescription();
         ServiceDescription sd = new ServiceDescription();
@@ -42,13 +45,28 @@ public class ClassifierAgent extends Agent {
         }
     }
 
+    private void setupLogger() {
+        FileHandler fh;
+
+        try {
+            // This block configure the logger with handler and formatter
+            fh = new FileHandler("./logs/ClassifierAgent" + getLocalName() + ".log");
+            myLogger.addHandler(fh);
+            SimpleFormatter formatter = new SimpleFormatter();
+            fh.setFormatter(formatter);
+        } catch (SecurityException | IOException e) {
+            e.printStackTrace();
+        }
+        myLogger.setUseParentHandlers(false);
+    }
+
     @Override
     protected void takeDown() {
         try {
             DFService.deregister(this);
-            System.out.println("[" + getLocalName() + "]: L'AGENT S'HA ELIMINAT DEL DF");
+            myLogger.info("[" + getLocalName() + "]: L'AGENT S'HA ELIMINAT DEL DF");
         } catch (FIPAException e) {
-            System.err.println("[" + getLocalName() + "]: NO S'HA POGUT ELIMINAR");
+            myLogger.severe("[" + getLocalName() + "]: NO S'HA POGUT ELIMINAR");
             e.printStackTrace();
         }
     }
@@ -83,4 +101,6 @@ public class ClassifierAgent extends Agent {
         }
         return predictions;
     }
+
+
 }

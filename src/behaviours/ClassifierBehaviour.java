@@ -12,7 +12,6 @@ import jade.lang.acl.ACLMessage;
 import jade.lang.acl.UnreadableException;
 import jade.util.Logger;
 import utils.ClassifierConfig;
-import weka.core.Instances;
 
 import java.io.IOException;
 import java.io.Serializable;

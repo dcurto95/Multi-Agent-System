@@ -18,11 +18,13 @@ import java.util.logging.FileHandler;
 import java.util.logging.SimpleFormatter;
 
 public class UserBehaviour extends FIPARequester {
-    private static final int INIT = 0;
-    private static final int INIT_DONE = 1;
-    private static final int TRAIN = 2;
-    private static final int PREDICT = 3;
+    private static final int PRE_INIT = 0;
+    private static final int INIT = 1;
+    private static final int INIT_DONE = 2;
+    private static final int TRAIN = 3;
+    private static final int PREDICT = 4;
     public static final String WRONG_INPUT_ONLY_INIT_T_OR_P_ACCEPTED = "Wrong input, only INIT, T or P accepted";
+    public static final String THE_SYSTEM_HAS_NOT_BEEN_INITIALIZED_YET = "The system has not been initialized yet.";
     private int state;
     private AID managerAgent;
     private UserAgent userAgent;
@@ -30,7 +32,7 @@ public class UserBehaviour extends FIPARequester {
     public UserBehaviour(UserAgent agent) {
         super(agent);
         this.userAgent = agent;
-        this.state = INIT;
+        this.state = PRE_INIT;
         setupLogger();
     }
 
@@ -52,13 +54,19 @@ public class UserBehaviour extends FIPARequester {
     @Override
     public void action() {
         String userInput = null;
+        boolean correctInput;
+        boolean configFound;
 
         switch (state) {
+            case PRE_INIT:
+                do {
+                    correctInput = checkUserInput();
+                } while (!correctInput);
             case INIT:
                 managerAgent = getManagerAID();
 
+                System.out.println("Initializing the system...\n");
                 try {
-
                     ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
                     msg.addReceiver(managerAgent);
                     msg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
@@ -73,44 +81,13 @@ public class UserBehaviour extends FIPARequester {
                 }
                 break;
             case INIT_DONE:
-                boolean correctInput = true;
                 do {
-                    try {
-                        userInput = userAgent.readUserInput();
-                        String[] splitedInput = userInput.split("\\s+");
-                        if (splitedInput.length <= 2) {
-                            switch (splitedInput[0].toUpperCase()) {
-                                case "INIT":
-                                    if (splitedInput.length == 2) {
-                                        correctInput = true;
-                                        state = TRAIN;
-                                        System.out.println("Initializing the system...");
-                                    }
-                                case "T":
-                                    correctInput = true;
-                                    state = TRAIN;
-                                    System.out.println("Training...");
-                                    break;
-                                case "P":
-                                    state = PREDICT;
-                                    correctInput = true;
-                                    System.out.println("Predicting...");
-                                    break;
-                                default:
-                                    correctInput = false;
-                                    System.out.println(WRONG_INPUT_ONLY_INIT_T_OR_P_ACCEPTED);
-                            }
-                        } else {
-                            correctInput = false;
-                            System.out.println(WRONG_INPUT_ONLY_INIT_T_OR_P_ACCEPTED);
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    correctInput = checkUserInput();
                 } while (!correctInput);
-
+                break;
             case TRAIN:
             case PREDICT:
+                userInput = userAgent.getUserInput();
                 ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
                 msg.addReceiver(managerAgent);
                 msg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
@@ -123,6 +100,61 @@ public class UserBehaviour extends FIPARequester {
                 state = INIT_DONE;
                 break;
         }
+    }
+
+    private boolean checkUserInput() {
+        String userInput;
+        boolean correctInput = false;
+
+        userInput = userAgent.readUserInput();
+        String[] splitedInput = userInput.split("\\s+");
+
+        if (splitedInput.length <= 2) {
+            switch (splitedInput[0].toUpperCase()) {
+                case "INIT":
+                    if (splitedInput.length == 2) {
+                        userAgent.setConfigFileName(splitedInput[1]);
+                        if (userAgent.readConfigFile()) {
+                            state = INIT;
+                            correctInput = true;
+                        }
+                    }
+                    break;
+                case "T":
+                    if (state == INIT_DONE) {
+                        if (splitedInput.length == 1) {
+                            state = TRAIN;
+                            correctInput = true;
+                            System.out.println("Training...");
+                            userAgent.setUserInput("T");
+                        } else {
+                            System.out.println(WRONG_INPUT_ONLY_INIT_T_OR_P_ACCEPTED);
+                        }
+                    } else {
+                        System.out.println(THE_SYSTEM_HAS_NOT_BEEN_INITIALIZED_YET);
+                    }
+                    break;
+                case "P":
+                    if (state == INIT_DONE) {
+                        if (splitedInput.length == 1) {
+                            state = PREDICT;
+                            correctInput = true;
+                            System.out.println("Predicting...");
+                            userAgent.setUserInput("P");
+                        } else {
+                            System.out.println(WRONG_INPUT_ONLY_INIT_T_OR_P_ACCEPTED);
+                        }
+                    } else {
+                        System.out.println(THE_SYSTEM_HAS_NOT_BEEN_INITIALIZED_YET);
+                    }
+                    break;
+                default:
+                    System.out.println(WRONG_INPUT_ONLY_INIT_T_OR_P_ACCEPTED);
+            }
+        } else {
+            System.out.println(WRONG_INPUT_ONLY_INIT_T_OR_P_ACCEPTED);
+        }
+        return correctInput;
     }
 
     @Override

@@ -1,14 +1,18 @@
 package agents;
 
 import behaviours.ManagerBehaviour;
+import jade.content.lang.sl.SLCodec;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
+import jade.domain.FIPANames;
+import jade.domain.JADEAgentManagement.JADEManagementOntology;
 import jade.util.Logger;
 import jade.wrapper.AgentContainer;
+import jade.wrapper.AgentController;
 import jade.wrapper.StaleProxyException;
 import utils.Configuration;
 import weka.core.Instances;
@@ -29,6 +33,7 @@ public class ManagerAgent extends Agent {
     private Instances[] classifiersTrainData;
     private Instances trainData;
     private Instances testData;
+    private List<AgentController> classifierAgents;
     private Map<AID, List<Double>> classifierPredictions;
 
     public Instances[] getClassifiersTrainData() {
@@ -66,7 +71,15 @@ public class ManagerAgent extends Agent {
     @Override
     protected void setup() {
         setupLogger();
+        classifierAgents = new ArrayList<>();
         classifierPredictions = new HashMap<>();
+
+        //Register the SL content language
+        getContentManager().registerLanguage(new SLCodec(), FIPANames.ContentLanguage.FIPA_SL);
+
+        //Register the mobility ontology
+        getContentManager().registerOntology(JADEManagementOntology.getInstance());
+
         // Registration with the DF
         DFAgentDescription dfd = new DFAgentDescription();
         ServiceDescription sd = new ServiceDescription();
@@ -116,7 +129,9 @@ public class ManagerAgent extends Agent {
         AgentContainer ac = this.getContainerController();
         try {
             for (int i = 0; i < this.configuration.getClassifiers(); i++) {
-                ac.createNewAgent("Classifier_" + i, "agents.ClassifierAgent", new Object[0]).start();
+                AgentController aux = ac.createNewAgent("Classifier_" + i, "agents.ClassifierAgent", null);
+                aux.start();
+                classifierAgents.add(aux);
             }
         } catch (StaleProxyException e) {
             e.printStackTrace();
@@ -150,7 +165,7 @@ public class ManagerAgent extends Agent {
     public void readDatasetFile() {
         try {
             BufferedReader reader =
-                    new BufferedReader(new FileReader("./data/iris.arff"));
+                    new BufferedReader(new FileReader("./data/" + configuration.getFile()));
             ArffReader arff = new ArffReader(reader);
 
             Instances data = arff.getData();
@@ -209,5 +224,16 @@ public class ManagerAgent extends Agent {
             finalPrediction.add(mostVotedOptions.get(0));
         }
         return finalPrediction;
+    }
+
+    public void deleteClassifiers() {
+        classifierAgents.forEach(agentController -> {
+            try {
+                agentController.kill();
+            } catch (StaleProxyException e) {
+                e.printStackTrace();
+            }
+        });
+        classifierAgents = new ArrayList<>();
     }
 }

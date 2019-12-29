@@ -2,8 +2,12 @@ package behaviours;
 
 import agents.ManagerAgent;
 import communication_protocols.FIPAMultipleTargetRequester;
+import jade.content.onto.basic.Action;
 import jade.core.AID;
 import jade.domain.FIPANames;
+import jade.domain.FIPAService;
+import jade.domain.JADEAgentManagement.JADEManagementOntology;
+import jade.domain.JADEAgentManagement.KillAgent;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.UnreadableException;
 import utils.ClassifierConfig;
@@ -19,10 +23,11 @@ import java.util.logging.FileHandler;
 import java.util.logging.SimpleFormatter;
 
 public class ManagerBehaviour extends FIPAMultipleTargetRequester {
-    private static final int INIT = 0;
-    private static final int INIT_DONE = 1;
-    private static final int TRAIN = 2;
-    private static final int PREDICT = 3;
+    private static final int PRE_INIT = 0;
+    private static final int INIT = 1;
+    private static final int INIT_DONE = 2;
+    private static final int TRAIN = 3;
+    private static final int PREDICT = 4;
     private int state;
     private ManagerAgent managerAgent;
     private List<AID> classifierAIDList;
@@ -31,8 +36,7 @@ public class ManagerBehaviour extends FIPAMultipleTargetRequester {
     public ManagerBehaviour(ManagerAgent agent) {
         super(agent);
         this.managerAgent = agent;
-        this.state = INIT;
-        this.classifierAIDList = new ArrayList<>();
+        this.state = PRE_INIT;
         this.reply = null;
         setupLogger();
     }
@@ -56,43 +60,52 @@ public class ManagerBehaviour extends FIPAMultipleTargetRequester {
     public void action() {
         ACLMessage receivedMessage = null;
         switch (state) {
-            case INIT:
+            case PRE_INIT:
                 receivedMessage = myAgent.blockingReceive();
-                if (receivedMessage != null) {
-                    switch (receivedMessage.getPerformative()) {
-                        case ACLMessage.REQUEST:
-                            Serializable content;
-                            try {
-                                content = receivedMessage.getContentObject();
-                                if (content != null) {
-                                    managerAgent.setConfiguration((Configuration) content);
-                                }
+                if (receivedMessage != null && receivedMessage.getPerformative() == ACLMessage.REQUEST) {
+                    reply = receivedMessage.createReply();
+                    Serializable content;
+                    try {
+                        content = receivedMessage.getContentObject();
+                        if (content != null) {
+                            managerAgent.setConfiguration((Configuration) content);
+                        }
+                        state = INIT;
 
-                                reply = receivedMessage.createReply();
-                                reply.setPerformative(ACLMessage.AGREE);
-                                myAgent.send(reply);
-                            } catch (UnreadableException e) {
-                                e.printStackTrace();
+                        reply.setPerformative(ACLMessage.AGREE);
+                        myAgent.send(reply);
+                    } catch (UnreadableException e) {
+                        e.printStackTrace();
 
-                                reply = receivedMessage.createReply();
-                                reply.setPerformative(ACLMessage.NOT_UNDERSTOOD);
-                                myAgent.send(reply);
-                            }
-                            myLogger.info("Agent " + this.myAgent.getLocalName() + " >>> Accepted request to initialize classifiers");
-                            managerAgent.createClassifiers();
-
-                            checkClassifiersACK();
-                            this.setTargetsAIDs(this.classifierAIDList);
-                            managerAgent.readDatasetFile();
-
-                            myLogger.info("Agent " + this.myAgent.getLocalName() + " >>> Init done");
-
-                            reply = receivedMessage.createReply();
-                            reply.setPerformative(ACLMessage.INFORM);
-                            myAgent.send(reply);
-                            state = INIT_DONE;
-                            break;
+                        reply.setPerformative(ACLMessage.NOT_UNDERSTOOD);
+                        myAgent.send(reply);
                     }
+                }
+                break;
+            case INIT:
+                myLogger.info("Agent " + this.myAgent.getLocalName() + " >>> Accepted request to initialize classifiers");
+                if (classifierAIDList != null && !classifierAIDList.isEmpty()) {
+                    //managerAgent.deleteClassifiers();
+                    classifierAIDList.forEach(this::killController);
+                    classifierAIDList = new ArrayList<>();
+                }
+                managerAgent.createClassifiers();
+
+                boolean allOk = checkClassifiersACK();
+                if (allOk) {
+                    this.setTargetsAIDs(this.classifierAIDList);
+                    managerAgent.readDatasetFile();
+
+                    myLogger.info("Agent " + this.myAgent.getLocalName() + " >>> Init done");
+
+                    reply.setPerformative(ACLMessage.INFORM);
+                    myAgent.send(reply);
+                    state = INIT_DONE;
+                } else {
+                    myLogger.severe("Agent " + this.myAgent.getLocalName() + " >>> Init failed!");
+
+                    reply.setPerformative(ACLMessage.FAILURE);
+                    myAgent.send(reply);
                 }
                 break;
             case INIT_DONE:
@@ -104,11 +117,32 @@ public class ManagerBehaviour extends FIPAMultipleTargetRequester {
                     if (content != null) {
                         if (content.equals("T")) {
                             state = TRAIN;
+                            reply.setPerformative(ACLMessage.AGREE);
+                            myAgent.send(reply);
                         } else if (content.equals("P")) {
                             state = PREDICT;
+                            reply.setPerformative(ACLMessage.AGREE);
+                            myAgent.send(reply);
                         }
-                        reply.setPerformative(ACLMessage.AGREE);
-                        myAgent.send(reply);
+                    }
+                    if (state == INIT_DONE) {
+                        try {
+                            Serializable contentObject = receivedMessage.getContentObject();
+                            if (contentObject instanceof Configuration) {
+                                managerAgent.setConfiguration((Configuration) contentObject);
+                                state = INIT;
+
+                                reply = receivedMessage.createReply();
+                                reply.setPerformative(ACLMessage.AGREE);
+                                myAgent.send(reply);
+                            }
+                        } catch (UnreadableException e) {
+                            e.printStackTrace();
+
+                            reply = receivedMessage.createReply();
+                            reply.setPerformative(ACLMessage.NOT_UNDERSTOOD);
+                            myAgent.send(reply);
+                        }
                     }
                 }
                 break;
@@ -116,7 +150,7 @@ public class ManagerBehaviour extends FIPAMultipleTargetRequester {
                 managerAgent.setRandomTrainDataForClassifiers();
                 sendTrainingDataToClassifiers();
 
-                boolean allOk = receiveAllTargetsMessagesInFipaProtocol();
+                allOk = receiveAllTargetsMessagesInFipaProtocol();
                 if (allOk) {
                     myLogger.info("Agent " + this.myAgent.getLocalName() + " >>> Training done");
                     reply.setPerformative(ACLMessage.INFORM);
@@ -198,8 +232,10 @@ public class ManagerBehaviour extends FIPAMultipleTargetRequester {
         }
     }
 
-    private void checkClassifiersACK() {
+    private boolean checkClassifiersACK() {
         ACLMessage fromClassifier;
+        this.classifierAIDList = new ArrayList<>();
+
         for (int i = 0; i < this.managerAgent.getConfiguration().getClassifiers(); i++) {
             fromClassifier = myAgent.blockingReceive();
             if (fromClassifier.getPerformative() == ACLMessage.INFORM && fromClassifier.getContent() != null) {
@@ -209,9 +245,13 @@ public class ManagerBehaviour extends FIPAMultipleTargetRequester {
                     myLogger.info("Agent " + this.myAgent.getLocalName() + " >>> Classifier " + classifierAID.getName() + " created");
                 } catch (UnreadableException e) {
                     e.printStackTrace();
+                    return false;
                 }
+            } else {
+                return false;
             }
         }
+        return true;
     }
 
     @Override
@@ -251,5 +291,33 @@ public class ManagerBehaviour extends FIPAMultipleTargetRequester {
                 }
                 break;
         }
+    }
+
+    private void killController(AID controller) {
+        ACLMessage request = createAMSRequest();
+
+        KillAgent ka = new KillAgent();
+        ka.setAgent(controller);
+
+        Action act = new Action();
+        act.setActor(myAgent.getAMS());
+        act.setAction(ka);
+
+        try {
+            myAgent.getContentManager().fillContent(request, act);
+            FIPAService.doFipaRequestClient(myAgent, request, 10000);
+        } catch (Exception e) {
+            // Should never happen
+            e.printStackTrace();
+        }
+    }
+
+    private ACLMessage createAMSRequest() {
+        ACLMessage request = new ACLMessage(ACLMessage.REQUEST);
+        request.addReceiver(myAgent.getAMS());
+        request.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
+        request.setLanguage(FIPANames.ContentLanguage.FIPA_SL);
+        request.setOntology(JADEManagementOntology.getInstance().getName());
+        return request;
     }
 }

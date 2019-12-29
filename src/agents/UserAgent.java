@@ -21,10 +21,24 @@ import java.util.logging.SimpleFormatter;
 public class UserAgent extends Agent {
 
     private Configuration configuration;
+    private String userInput;
     private Logger myLogger = Logger.getMyLogger(getClass().getName());
+    private String configFileName;
+
+    public void setConfigFileName(String configFileName) {
+        this.configFileName = configFileName;
+    }
 
     public Configuration getConfiguration() {
         return configuration;
+    }
+
+    public String getUserInput() {
+        return userInput;
+    }
+
+    public void setUserInput(String userInput) {
+        this.userInput = userInput;
     }
 
     private void setupLogger() {
@@ -46,31 +60,29 @@ public class UserAgent extends Agent {
     protected void setup() {
         setupLogger();
         Configuration myConfig;
+        // Registration with the DF
+        DFAgentDescription dfd = new DFAgentDescription();
+        ServiceDescription sd = new ServiceDescription();
+        sd.setType("agents.UserAgent");
+        sd.setName(getName());
+        sd.setOwnership("IMAS");
+        dfd.setName(getAID());
+        dfd.addServices(sd);
         try {
-            myConfig = XmlParser.parseConfigFile("configuration.xml");
-            this.configuration = myConfig;
-
-            // Registration with the DF
-            DFAgentDescription dfd = new DFAgentDescription();
-            ServiceDescription sd = new ServiceDescription();
-            sd.setType("agents.UserAgent");
-            sd.setName(getName());
-            sd.setOwnership("IMAS");
-            dfd.setName(getAID());
-            dfd.addServices(sd);
-            try {
-                DFService.register(this, dfd);
-                UserBehaviour userBehaviour = new UserBehaviour(this);
-                addBehaviour(userBehaviour);
-            } catch (FIPAException e) {
-                e.printStackTrace();
-                myLogger.log(Logger.SEVERE, "Agent " + getLocalName() + " - Cannot register with DF", e);
-                doDelete();
-            }
-
-        } catch (ParserConfigurationException | IOException | SAXException e) {
+            DFService.register(this, dfd);
+            UserBehaviour userBehaviour = new UserBehaviour(this);
+            addBehaviour(userBehaviour);
+        } catch (FIPAException e) {
             e.printStackTrace();
+            myLogger.log(Logger.SEVERE, "Agent " + getLocalName() + " - Cannot register with DF", e);
+            doDelete();
         }
+    }
+
+    public void parseConfigFile(String configFile) throws ParserConfigurationException, IOException, SAXException {
+        Configuration myConfig;
+        myConfig = XmlParser.parseConfigFile(configFile);
+        this.configuration = myConfig;
     }
 
     @Override
@@ -84,15 +96,31 @@ public class UserAgent extends Agent {
         }
     }
 
-    public String readUserInput() throws IOException {
+    public String readUserInput() {
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         // Read and process lines from console
         String input;
-        while (br.ready()) {
-            br.readLine();
+        try {
+            while (br.ready()) {
+                br.readLine();
+            }
+            System.out.println("\n\nChoose action:\n - Initialize the system (INIT <config_file>)\n - train (T)\n - predict (P)");
+            input = br.readLine();
+            userInput = input;
+            return input;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return "";
         }
-        System.out.println("Choose action:\n - Initialize the system (INIT <config_file>)\n - train (T)\n - predict (P):");
-        input = br.readLine();
-        return input;
+    }
+
+    public boolean readConfigFile() {
+        try {
+            parseConfigFile(configFileName);
+        } catch (ParserConfigurationException | SAXException | IOException e) {
+            System.err.println("File Not Found: Please enter the correct config file.");
+            return false;
+        }
+        return true;
     }
 }
