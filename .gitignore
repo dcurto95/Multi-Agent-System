@@ -6,3 +6,4 @@ MTPs-Main-Container.txt
 *.iml
 out/
 logs/*
+!logs/keep.txt
