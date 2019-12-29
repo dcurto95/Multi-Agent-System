@@ -35,6 +35,7 @@ public class ManagerAgent extends Agent {
     private Instances testData;
     private List<AgentController> classifierAgents;
     private Map<AID, List<Double>> classifierPredictions;
+    private Map<Integer, List<Double>> classifierPredictions2;
 
     public Instances[] getClassifiersTrainData() {
         return classifiersTrainData;
@@ -73,6 +74,7 @@ public class ManagerAgent extends Agent {
         setupLogger();
         classifierAgents = new ArrayList<>();
         classifierPredictions = new HashMap<>();
+        classifierPredictions2 = new HashMap<>();
 
         //Register the SL content language
         getContentManager().registerLanguage(new SLCodec(), FIPANames.ContentLanguage.FIPA_SL);
@@ -193,6 +195,10 @@ public class ManagerAgent extends Agent {
         classifierPredictions.put(sender, predictions);
     }
 
+    public void setPrediction2(int i, List<Double> predictions){
+        classifierPredictions2.put(i, predictions);
+    }
+
     public List<Double> votePredictions() {
         //TODO Improve
         List<Double> finalPrediction = new ArrayList<>();
@@ -226,14 +232,37 @@ public class ManagerAgent extends Agent {
         return finalPrediction;
     }
 
-    public void deleteClassifiers() {
-        classifierAgents.forEach(agentController -> {
-            try {
-                agentController.kill();
-            } catch (StaleProxyException e) {
-                e.printStackTrace();
+    public List<Double> votePredictions2() {
+        //TODO Improve
+        List<Double> finalPrediction = new ArrayList<>();
+        List<Integer> ids = new ArrayList<>(classifierPredictions2.keySet());
+
+        for (int i = 0; i < classifierPredictions2.get(ids.get(0)).size(); i++) { // For each instance
+            Map<Double, Integer> options = new HashMap<>();
+
+            int maxVotes = 0;
+            Double maxVoted = null;
+            for (Integer id : ids) { // For each agent
+                Double agentVote = classifierPredictions2.get(id).get(i);
+                int trainingSize = configuration.getTrainingSettings()[id];
+
+                if (!options.containsKey(agentVote)) {
+                    options.put(agentVote, 0);
+                }
+
+                int oldCount = options.get(agentVote);
+                int newCount = oldCount + trainingSize;
+                options.put(agentVote, newCount);
+                System.out.println("Agent amb " + trainingSize + " vota " + agentVote);
+
+                if (newCount > maxVotes) {
+                    maxVotes = newCount;
+                    maxVoted = agentVote;
+                }
             }
-        });
-        classifierAgents = new ArrayList<>();
+
+            finalPrediction.add(maxVoted);
+        }
+        return finalPrediction;
     }
 }
