@@ -10,12 +10,15 @@ import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.UnreadableException;
+import jade.util.Logger;
 import utils.ClassifierConfig;
 import weka.core.Instances;
 
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
+import java.util.logging.FileHandler;
+import java.util.logging.SimpleFormatter;
 
 
 public class ClassifierBehaviour extends CyclicBehaviour {
@@ -23,19 +26,36 @@ public class ClassifierBehaviour extends CyclicBehaviour {
     private static final int INIT = 0;
     private static final int INIT_DONE = 1;
     private ClassifierAgent classifierAgent;
+    private Logger myLogger = Logger.getMyLogger(getClass().getName());
     private int state;
 
     public ClassifierBehaviour(ClassifierAgent agent) {
         super(agent);
         this.classifierAgent = agent;
         this.state = INIT;
+        setupLogger();
+    }
+
+    private void setupLogger() {
+        FileHandler fh;
+
+        try {
+            // This block configure the logger with handler and formatter
+            fh = new FileHandler("./logs/ClassifierBehavior_" + classifierAgent.getLocalName() + ".log");
+            myLogger.addHandler(fh);
+            SimpleFormatter formatter = new SimpleFormatter();
+            fh.setFormatter(formatter);
+        } catch (SecurityException | IOException e) {
+            e.printStackTrace();
+        }
+        myLogger.setUseParentHandlers(false);
     }
 
     @Override
     public void action() {
         switch (this.state) {
             case INIT:
-                System.out.println("Agent " + this.myAgent.getLocalName() + " >>> I'm alive!");
+                myLogger.info("Agent " + this.myAgent.getLocalName() + " >>> I'm alive!");
                 AID managerAID = getManagerAID();
 
                 ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
@@ -84,8 +104,8 @@ public class ClassifierBehaviour extends CyclicBehaviour {
     }
 
     private void predictAgent(ACLMessage receivedMessage, ClassifierConfig classifierConfig) {
-        ACLMessage reply;//TODO: Temporal Log, remove or use Logger
-        System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Received Predict Data");
+        ACLMessage reply;
+        myLogger.info("Agent " + this.myAgent.getLocalName() + " >>> Received Predict Data");
 
         List<Double> predictions = classifierAgent.predict(classifierConfig);
         if (!predictions.isEmpty()) {
@@ -109,8 +129,8 @@ public class ClassifierBehaviour extends CyclicBehaviour {
     }
 
     private void trainAgent(ACLMessage receivedMessage, ClassifierConfig classifierConfig) {
-        ACLMessage reply;//TODO: Temporal Log, remove or use Logger
-        System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Received Training Data");
+        ACLMessage reply;
+        myLogger.info("Agent " + this.myAgent.getLocalName() + " >>> Received Training Data");
 
         if (classifierAgent.train(classifierConfig)) {
             //INFORM
@@ -147,7 +167,7 @@ public class ClassifierBehaviour extends CyclicBehaviour {
                 break;
             }
         } while (managerAID == null);
-        System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Found agent " + managerAID.getLocalName());
+        myLogger.info("Agent " + this.myAgent.getLocalName() + " >>> Found agent " + managerAID.getLocalName());
         return managerAID;
     }
 }

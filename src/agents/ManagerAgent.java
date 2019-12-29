@@ -18,6 +18,8 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
+import java.util.logging.FileHandler;
+import java.util.logging.SimpleFormatter;
 import java.util.stream.Collectors;
 
 public class ManagerAgent extends Agent {
@@ -25,6 +27,7 @@ public class ManagerAgent extends Agent {
     private Configuration configuration;
     private Logger myLogger = Logger.getMyLogger(getClass().getName());
     private Instances[] classifiersTrainData;
+    private Instances trainData;
     private Instances testData;
     private Map<AID, List<Double>> classifierPredictions;
 
@@ -34,6 +37,14 @@ public class ManagerAgent extends Agent {
 
     public void setClassifiersTrainData(Instances[] classifiersTrainData) {
         this.classifiersTrainData = classifiersTrainData;
+    }
+
+    public Instances getTrainData() {
+        return trainData;
+    }
+
+    public void setTrainData(Instances trainData) {
+        this.trainData = trainData;
     }
 
     public Instances getTestData() {
@@ -54,6 +65,7 @@ public class ManagerAgent extends Agent {
 
     @Override
     protected void setup() {
+        setupLogger();
         classifierPredictions = new HashMap<>();
         // Registration with the DF
         DFAgentDescription dfd = new DFAgentDescription();
@@ -74,13 +86,28 @@ public class ManagerAgent extends Agent {
         }
     }
 
+    private void setupLogger() {
+        FileHandler fh;
+
+        try {
+            // This block configure the logger with handler and formatter
+            fh = new FileHandler("./logs/ManagerAgent.log");
+            myLogger.addHandler(fh);
+            SimpleFormatter formatter = new SimpleFormatter();
+            fh.setFormatter(formatter);
+        } catch (SecurityException | IOException e) {
+            e.printStackTrace();
+        }
+        myLogger.setUseParentHandlers(false);
+    }
+
     @Override
     protected void takeDown() {
         try {
             DFService.deregister(this);
-            System.out.println("[" + getLocalName() + "]: L'AGENT S'HA ELIMINAT DEL DF");
+            myLogger.info("[" + getLocalName() + "]: L'AGENT S'HA ELIMINAT DEL DF");
         } catch (FIPAException e) {
-            System.err.println("[" + getLocalName() + "]: NO S'HA POGUT ELIMINAR");
+            myLogger.severe("[" + getLocalName() + "]: NO S'HA POGUT ELIMINAR");
             e.printStackTrace();
         }
     }
@@ -130,16 +157,22 @@ public class ManagerAgent extends Agent {
             data.setClassIndex(data.numAttributes() - 1);
             int trainSize = data.numInstances() - configuration.getClassifyInstances();
             Instances trainData = new Instances(data, 0, trainSize);
+            setTrainData(trainData);
             setTestData(new Instances(data, trainSize, configuration.getClassifyInstances()));
+            //TODO: Take out
             System.out.println("TRUTH:");
             for (int i = 0; i < testData.numInstances(); i++) {
                 System.out.println(testData.instance(i).classValue());
             }
-            setClassifiersTrainData(createTrainingSubset(configuration.getTrainingSettings(), trainData));
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
+
+    public void setRandomTrainDataForClassifiers() {
+        setClassifiersTrainData(createTrainingSubset(configuration.getTrainingSettings(), trainData));
+    }
+
 
     public void setPrediction(AID sender, List<Double> predictions) {
         classifierPredictions.put(sender, predictions);

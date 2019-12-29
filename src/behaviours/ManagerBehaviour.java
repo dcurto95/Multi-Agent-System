@@ -15,6 +15,8 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.logging.FileHandler;
+import java.util.logging.SimpleFormatter;
 
 public class ManagerBehaviour extends FIPAMultipleTargetRequester {
     private static final int INIT = 0;
@@ -32,6 +34,22 @@ public class ManagerBehaviour extends FIPAMultipleTargetRequester {
         this.state = INIT;
         this.classifierAIDList = new ArrayList<>();
         this.reply = null;
+        setupLogger();
+    }
+
+    private void setupLogger() {
+        FileHandler fh;
+
+        try {
+            // This block configure the logger with handler and formatter
+            fh = new FileHandler("./logs/ManagerBehaviour.log");
+            myLogger.addHandler(fh);
+            SimpleFormatter formatter = new SimpleFormatter();
+            fh.setFormatter(formatter);
+        } catch (SecurityException | IOException e) {
+            e.printStackTrace();
+        }
+        myLogger.setUseParentHandlers(false);
     }
 
     @Override
@@ -60,14 +78,14 @@ public class ManagerBehaviour extends FIPAMultipleTargetRequester {
                                 reply.setPerformative(ACLMessage.NOT_UNDERSTOOD);
                                 myAgent.send(reply);
                             }
-                            System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Accepted request to initialize classifiers");
+                            myLogger.info("Agent " + this.myAgent.getLocalName() + " >>> Accepted request to initialize classifiers");
                             managerAgent.createClassifiers();
 
                             checkClassifiersACK();
                             this.setTargetsAIDs(this.classifierAIDList);
                             managerAgent.readDatasetFile();
 
-                            System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Init done");
+                            myLogger.info("Agent " + this.myAgent.getLocalName() + " >>> Init done");
 
                             reply = receivedMessage.createReply();
                             reply.setPerformative(ACLMessage.INFORM);
@@ -95,15 +113,16 @@ public class ManagerBehaviour extends FIPAMultipleTargetRequester {
                 }
                 break;
             case TRAIN:
+                managerAgent.setRandomTrainDataForClassifiers();
                 sendTrainingDataToClassifiers();
 
                 boolean allOk = receiveAllTargetsMessagesInFipaProtocol();
                 if (allOk) {
-                    System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Training done");
+                    myLogger.info("Agent " + this.myAgent.getLocalName() + " >>> Training done");
                     reply.setPerformative(ACLMessage.INFORM);
                     myAgent.send(reply);
                 } else {
-                    System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Training Failed");
+                    myLogger.severe("Agent " + this.myAgent.getLocalName() + " >>> Training Failed");
                     reply.setPerformative(ACLMessage.FAILURE);
                     myAgent.send(reply);
                 }
@@ -114,7 +133,7 @@ public class ManagerBehaviour extends FIPAMultipleTargetRequester {
                 allOk = receiveAllTargetsMessagesInFipaProtocol();
                 if (allOk) {
                     List<Double> predictions = managerAgent.votePredictions();
-                    System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Predict done");
+                    myLogger.info("Agent " + this.myAgent.getLocalName() + " >>> Predict done");
                     reply.setPerformative(ACLMessage.INFORM);
                     try {
                         reply.setContentObject((ArrayList) predictions);
@@ -123,7 +142,7 @@ public class ManagerBehaviour extends FIPAMultipleTargetRequester {
                         e.printStackTrace();
                     }
                 } else {
-                    System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Predict Failed");
+                    myLogger.severe("Agent " + this.myAgent.getLocalName() + " >>> Predict Failed");
                     reply.setPerformative(ACLMessage.FAILURE);
                     myAgent.send(reply);
                 }
@@ -187,7 +206,7 @@ public class ManagerBehaviour extends FIPAMultipleTargetRequester {
                 try {
                     AID classifierAID = (AID) fromClassifier.getContentObject();
                     this.classifierAIDList.add(classifierAID);
-                    System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Classifier " + classifierAID.getName() + " created");
+                    myLogger.info("Agent " + this.myAgent.getLocalName() + " >>> Classifier " + classifierAID.getName() + " created");
                 } catch (UnreadableException e) {
                     e.printStackTrace();
                 }
@@ -197,29 +216,27 @@ public class ManagerBehaviour extends FIPAMultipleTargetRequester {
 
     @Override
     protected void doNotUnderstood() {
-        System.out.println("NOT UNDERSTOOD");
+        myLogger.info("NOT UNDERSTOOD");
     }
 
     @Override
     protected void doRefuse() {
-        System.out.println("REFUSE");
+        myLogger.info("REFUSE");
     }
 
     @Override
     protected void doFailure(ACLMessage receivedMessage) {
-        //TODO: This is log, will be removed/changed in the future
-        System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Received Message Failure from " + receivedMessage.getSender().getLocalName());
+        myLogger.severe("Agent " + this.myAgent.getLocalName() + " >>> Received Message Failure from " + receivedMessage.getSender().getLocalName());
         switch (state) {
             case INIT:
-                System.out.println("Failed to initialize the system");
+                myLogger.severe("Failed to initialize the system");
                 break;
         }
     }
 
     @Override
     protected void doInform(ACLMessage receivedMessage) {
-        //TODO: This is log, will be removed/changed in the future
-        System.out.println("Agent " + this.myAgent.getLocalName() + " >>> Received Message Inform from " + receivedMessage.getSender().getLocalName());
+        myLogger.info("Agent " + this.myAgent.getLocalName() + " >>> Received Message Inform from " + receivedMessage.getSender().getLocalName());
         switch (state) {
             case INIT:
                 state = INIT_DONE;

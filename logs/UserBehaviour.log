@@ -1,0 +1,10 @@
+dic 29, 2019 4:34:18 PM behaviours.UserBehaviour getManagerAID
+INFORMACIÓN: Agent user >>> Found agent manager
+dic 29, 2019 4:34:18 PM communication_protocols.FIPARequester receiveMessageInFipaProtocol
+INFORMACIÓN: Agent user >>> Received Message Agree from manager
+dic 29, 2019 4:34:20 PM behaviours.UserBehaviour doInform
+INFORMACIÓN: Agent user >>> Received Message Inform from manager
+dic 29, 2019 4:34:20 PM communication_protocols.FIPARequester receiveMessageInFipaProtocol
+INFORMACIÓN: Agent user >>> manager successfully performed the requested action
+dic 29, 2019 4:34:35 PM communication_protocols.FIPARequester receiveMessageInFipaProtocol
+INFORMACIÓN: Agent user >>> Received Message Agree from manager

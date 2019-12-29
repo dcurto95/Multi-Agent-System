@@ -4,6 +4,7 @@ import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.lang.acl.ACLMessage;
+import jade.util.Logger;
 
 import java.util.HashMap;
 import java.util.List;
@@ -18,6 +19,7 @@ public abstract class FIPAMultipleTargetRequester extends CyclicBehaviour {
     private static final String AGENT_S_UNEXPECTED_MESSAGE_NULL = "Agent %s >>> Unexpected Message [ null ]";
     private static final String AGENT_S_S_SUCCESSFULLY_PERFORMED_THE_REQUESTED_ACTION = "Agent %s >>> %s successfully performed the requested action";
     protected Agent agent;
+    protected Logger myLogger = Logger.getMyLogger(getClass().getName());
     private HashMap<AID, Integer> targetLastMessageMap;
 
     public FIPAMultipleTargetRequester(Agent agent) {
@@ -47,7 +49,7 @@ public abstract class FIPAMultipleTargetRequester extends CyclicBehaviour {
                 AID sender = receivedMessage.getSender();
                 switch (receivedMessage.getPerformative()) {
                     case ACLMessage.AGREE:
-                        System.out.println(String.format(
+                        myLogger.info(String.format(
                                 AGENT_S_RECEIVED_MESSAGE_AGREE_FROM_S,
                                 this.agent.getLocalName(),
                                 sender.getLocalName()));
@@ -58,7 +60,7 @@ public abstract class FIPAMultipleTargetRequester extends CyclicBehaviour {
                         if (targetLastMessageMap.get(sender) == ACLMessage.AGREE) {
                             targetLastMessageMap.put(sender, ACLMessage.INFORM);
                             doInform(receivedMessage);
-                            System.out.println(String.format(
+                            myLogger.info(String.format(
                                     AGENT_S_S_SUCCESSFULLY_PERFORMED_THE_REQUESTED_ACTION,
                                     this.agent.getLocalName(),
                                     sender.getLocalName()));
@@ -79,10 +81,10 @@ public abstract class FIPAMultipleTargetRequester extends CyclicBehaviour {
                         doNotUnderstood();
                         break;
                     default:
-                        System.out.println(PERFORMATIVE_NOT_UNDERSTOOD);
+                        myLogger.severe(PERFORMATIVE_NOT_UNDERSTOOD);
                 }
             } else {
-                System.out.println(String.format(AGENT_S_UNEXPECTED_MESSAGE_NULL, this.agent.getLocalName()));
+                myLogger.severe(String.format(AGENT_S_UNEXPECTED_MESSAGE_NULL, this.agent.getLocalName()));
             }
         } while (!allTargetsFinished());
 

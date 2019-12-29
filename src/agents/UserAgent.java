@@ -15,6 +15,8 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.logging.FileHandler;
+import java.util.logging.SimpleFormatter;
 
 public class UserAgent extends Agent {
 
@@ -25,9 +27,24 @@ public class UserAgent extends Agent {
         return configuration;
     }
 
+    private void setupLogger() {
+        FileHandler fh;
+
+        try {
+            // This block configure the logger with handler and formatter
+            fh = new FileHandler("./logs/UserAgent.log");
+            myLogger.addHandler(fh);
+            SimpleFormatter formatter = new SimpleFormatter();
+            fh.setFormatter(formatter);
+        } catch (SecurityException | IOException e) {
+            e.printStackTrace();
+        }
+        myLogger.setUseParentHandlers(false);
+    }
+
     @Override
     protected void setup() {
-
+        setupLogger();
         Configuration myConfig;
         try {
             myConfig = XmlParser.parseConfigFile("configuration.xml");
@@ -60,9 +77,9 @@ public class UserAgent extends Agent {
     protected void takeDown() {
         try {
             DFService.deregister(this);
-            System.out.println("[" + getLocalName() + "]: L'AGENT S'HA ELIMINAT DEL DF");
+            myLogger.info("[" + getLocalName() + "]: L'AGENT S'HA ELIMINAT DEL DF");
         } catch (FIPAException e) {
-            System.err.println("[" + getLocalName() + "]: NO S'HA POGUT ELIMINAR");
+            myLogger.severe("[" + getLocalName() + "]: NO S'HA POGUT ELIMINAR");
             e.printStackTrace();
         }
     }
@@ -74,8 +91,8 @@ public class UserAgent extends Agent {
         while (br.ready()) {
             br.readLine();
         }
-        System.out.println("Select train (T) or predict (P):");
+        System.out.println("Choose action:\n - Initialize the system (INIT <config_file>)\n - train (T)\n - predict (P):");
         input = br.readLine();
-        return input.toUpperCase();
+        return input;
     }
 }

@@ -1,0 +1,8 @@
+dic 29, 2019 4:34:18 PM behaviours.ManagerBehaviour action
+INFORMACIÓN: Agent manager >>> Accepted request to initialize classifiers
+dic 29, 2019 4:34:20 PM behaviours.ManagerBehaviour checkClassifiersACK
+INFORMACIÓN: Agent manager >>> Classifier Classifier_0@192.168.1.56:1099/JADE created
+dic 29, 2019 4:34:20 PM behaviours.ManagerBehaviour checkClassifiersACK
+INFORMACIÓN: Agent manager >>> Classifier Classifier_1@192.168.1.56:1099/JADE created
+dic 29, 2019 4:34:20 PM behaviours.ManagerBehaviour action
+INFORMACIÓN: Agent manager >>> Init done

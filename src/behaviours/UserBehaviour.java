@@ -14,12 +14,15 @@ import jade.lang.acl.UnreadableException;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.logging.FileHandler;
+import java.util.logging.SimpleFormatter;
 
 public class UserBehaviour extends FIPARequester {
     private static final int INIT = 0;
     private static final int INIT_DONE = 1;
     private static final int TRAIN = 2;
     private static final int PREDICT = 3;
+    public static final String WRONG_INPUT_ONLY_INIT_T_OR_P_ACCEPTED = "Wrong input, only INIT, T or P accepted";
     private int state;
     private AID managerAgent;
     private UserAgent userAgent;
@@ -28,6 +31,22 @@ public class UserBehaviour extends FIPARequester {
         super(agent);
         this.userAgent = agent;
         this.state = INIT;
+        setupLogger();
+    }
+
+    private void setupLogger() {
+        FileHandler fh;
+
+        try {
+            // This block configure the logger with handler and formatter
+            fh = new FileHandler("./logs/UserBehaviour.log");
+            myLogger.addHandler(fh);
+            SimpleFormatter formatter = new SimpleFormatter();
+            fh.setFormatter(formatter);
+        } catch (SecurityException | IOException e) {
+            e.printStackTrace();
+        }
+        myLogger.setUseParentHandlers(false);
     }
 
     @Override
@@ -58,21 +77,32 @@ public class UserBehaviour extends FIPARequester {
                 do {
                     try {
                         userInput = userAgent.readUserInput();
-
-                        switch (userInput) {
-                            case "T":
-                                correctInput = true;
-                                state = TRAIN;
-                                System.out.println("Training");
-                                break;
-                            case "P":
-                                state = PREDICT;
-                                correctInput = true;
-                                System.out.println("Predicting");
-                                break;
-                            default:
-                                correctInput = false;
-                                System.out.println("Wrong input, only T or P accepted");
+                        String[] splitedInput = userInput.split("\\s+");
+                        if (splitedInput.length <= 2) {
+                            switch (splitedInput[0].toUpperCase()) {
+                                case "INIT":
+                                    if (splitedInput.length == 2) {
+                                        correctInput = true;
+                                        state = TRAIN;
+                                        System.out.println("Initializing the system...");
+                                    }
+                                case "T":
+                                    correctInput = true;
+                                    state = TRAIN;
+                                    System.out.println("Training...");
+                                    break;
+                                case "P":
+                                    state = PREDICT;
+                                    correctInput = true;
+                                    System.out.println("Predicting...");
+                                    break;
+                                default:
+                                    correctInput = false;
+                                    System.out.println(WRONG_INPUT_ONLY_INIT_T_OR_P_ACCEPTED);
+                            }
+                        } else {
+                            correctInput = false;
+                            System.out.println(WRONG_INPUT_ONLY_INIT_T_OR_P_ACCEPTED);
                         }
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -97,18 +127,17 @@ public class UserBehaviour extends FIPARequester {
 
     @Override
     protected void doNotUnderstood() {
-        System.out.println("NOT UNDERSTOOD");
+        myLogger.severe("NOT UNDERSTOOD");
     }
 
     @Override
     protected void doRefuse() {
-        System.out.println("REFUSE");
+        myLogger.severe("REFUSE");
     }
 
     @Override
     protected void doFailure(ACLMessage receivedMessage) {
-        //TODO: This is log, will be removed/changed in the future
-        System.out.println("Agent " + this.agent.getLocalName() + " >>> Received Message Failure from " + receivedMessage.getSender().getLocalName());
+        myLogger.severe("Agent " + this.agent.getLocalName() + " >>> Received Message Failure from " + receivedMessage.getSender().getLocalName());
         switch (state) {
             case INIT:
                 System.out.println("Failed to initialize the system");
@@ -124,8 +153,7 @@ public class UserBehaviour extends FIPARequester {
 
     @Override
     protected void doInform(ACLMessage receivedMessage) {
-        //TODO: This is log, will be removed/changed in the future
-        System.out.println("Agent " + this.agent.getLocalName() + " >>> Received Message Inform from " + receivedMessage.getSender().getLocalName());
+        myLogger.info("Agent " + this.agent.getLocalName() + " >>> Received Message Inform from " + receivedMessage.getSender().getLocalName());
         switch (state) {
             case INIT:
                 state = INIT_DONE;
@@ -134,7 +162,6 @@ public class UserBehaviour extends FIPARequester {
                 System.out.println("Correctly trained the data.");
                 break;
             case PREDICT:
-                //TODO get content and print prediction
                 try {
                     System.out.println("Prediction finished.");
                     System.out.println(receivedMessage.getContentObject().toString());
@@ -168,7 +195,7 @@ public class UserBehaviour extends FIPARequester {
                 break;
             }
         } while (managerAID == null);
-        System.out.println("Agent " + this.agent.getLocalName() + " >>> Found agent " + managerAID.getLocalName());
+        myLogger.info("Agent " + this.agent.getLocalName() + " >>> Found agent " + managerAID.getLocalName());
         return managerAID;
     }
 }
