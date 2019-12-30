@@ -85,9 +85,9 @@ public class ManagerBehaviour extends FIPAMultipleTargetRequester {
             case INIT:
                 myLogger.info("Agent " + this.myAgent.getLocalName() + " >>> Accepted request to initialize classifiers");
                 if (classifierAIDList != null && !classifierAIDList.isEmpty()) {
-                    //managerAgent.deleteClassifiers();
                     classifierAIDList.forEach(this::killController);
                     classifierAIDList = new ArrayList<>();
+                    managerAgent.resetClassifierPredictions();
                 }
                 managerAgent.createClassifiers();
 
@@ -280,9 +280,7 @@ public class ManagerBehaviour extends FIPAMultipleTargetRequester {
             case PREDICT:
                 try {
                     managerAgent.setPrediction(
-                            receivedMessage.getSender(),
-                            (List<Double>) receivedMessage.getContentObject());
-                    managerAgent.setPrediction2(classifierAIDList.indexOf(receivedMessage.getSender()),
+                            classifierAIDList.indexOf(receivedMessage.getSender()),
                             (List<Double>) receivedMessage.getContentObject());
                 } catch (UnreadableException e) {
                     e.printStackTrace();
