@@ -176,11 +176,6 @@ public class ManagerAgent extends Agent {
             int trainSize = data.numInstances() - configuration.getClassifyInstances();
             setTrainData(new Instances(data, 0, trainSize));
             setTestData(new Instances(data, trainSize, configuration.getClassifyInstances()));
-            //TODO: Take out
-            System.out.println("TRUTH:");
-            for (int i = 0; i < testData.numInstances(); i++) {
-                System.out.println(testData.instance(i).classValue());
-            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -195,7 +190,7 @@ public class ManagerAgent extends Agent {
         classifierPredictions.put(sender, predictions);
     }
 
-    public void setPrediction2(int AIDIndex, List<Double> predictions){
+    public void setPrediction2(int AIDIndex, List<Double> predictions) {
         classifierPredictions2.put(AIDIndex, predictions);
     }
 
@@ -273,11 +268,11 @@ public class ManagerAgent extends Agent {
         int[] trainingSizes = configuration.getTrainingSettings();
         int maxTrainingSize = Collections.max(Arrays.stream(trainingSizes).boxed().collect(Collectors.toList()));
         Map<Integer, Integer> effectiveNumberOfVotes = new HashMap<>();
-        for (int i = 0; i < trainingSizes.length; i++){
-            if (trainingSizes[i] > 0.5 * maxTrainingSize){
+        for (int i = 0; i < trainingSizes.length; i++) {
+            if (trainingSizes[i] > 0.5 * maxTrainingSize) {
                 effectiveNumberOfVotes.put(i, trainingSizes[i]);
             } else {
-                effectiveNumberOfVotes.put(i, (int) Math.ceil(0.5*trainingSizes[i]));
+                effectiveNumberOfVotes.put(i, (int) Math.ceil(0.5 * trainingSizes[i]));
             }
         }
 
@@ -306,15 +301,14 @@ public class ManagerAgent extends Agent {
                 if (newCount > maxVotes) {
                     maxVotes = newCount;
                     maxVoted = new ArrayList<>(List.of(agentVote));
-                } else if (newCount == maxVotes){
+                } else if (newCount == maxVotes) {
                     maxVoted.add(agentVote);
                 }
             }
 
-            if (maxVoted.size() == 1){
+            if (maxVoted.size() == 1) {
                 finalPrediction.add(maxVoted.get(0));
-            }
-            else if (maxVoted.size() > 1){ // TIE
+            } else if (maxVoted.size() > 1) { // TIE
                 List<Double> maxVoted2 = new ArrayList<>();
                 int maxVoters = 0;
                 for (Double vote : maxVoted) {
@@ -328,12 +322,32 @@ public class ManagerAgent extends Agent {
                 }
                 if (maxVoted2.size() == 1) {
                     finalPrediction.add(maxVoted2.get(0));
-                }
-                else{ // TIE
-                    finalPrediction.add(maxVoted2.get(new java.util.Random().nextInt(maxVoted2.size())));
+                } else { // TIE
+                    finalPrediction.add(maxVoted2.get(new Random().nextInt(maxVoted2.size())));
                 }
             }
         }
         return finalPrediction;
+    }
+
+    public String getResults() {
+        String result = "";
+        result = result.concat("TRUTH:\n[");
+        for (int i = 0; i < testData.numInstances(); i++) {
+            if (i != 0) result = result.concat(", ");
+            result = result.concat(String.valueOf(testData.instance(i).classValue()));
+        }
+
+        result = result.concat("]\nPREDICTIONS:\n");
+        List<Double> predictions = votePredictions3();
+        result = result.concat(predictions.toString() + "\n");
+
+        result = result.concat("\nACCURACY:\n");
+        int correct = 0;
+        for (int i = 0; i < testData.numInstances(); i++) {
+            if (testData.instance(i).classValue() == predictions.get(i)) correct++;
+        }
+        result = result.concat((((float)correct / testData.numInstances()) * 100) + "%\n");
+        return result;
     }
 }

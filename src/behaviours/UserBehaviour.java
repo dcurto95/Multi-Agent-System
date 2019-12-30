@@ -65,7 +65,7 @@ public class UserBehaviour extends FIPARequester {
             case INIT:
                 managerAgent = getManagerAID();
 
-                System.out.println("Initializing the system...\n");
+                System.out.println("Initializing the system...");
                 try {
                     ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
                     msg.addReceiver(managerAgent);
@@ -194,12 +194,8 @@ public class UserBehaviour extends FIPARequester {
                 System.out.println("Correctly trained the data.");
                 break;
             case PREDICT:
-                try {
-                    System.out.println("Prediction finished.");
-                    System.out.println(receivedMessage.getContentObject().toString());
-                } catch (UnreadableException e) {
-                    e.printStackTrace();
-                }
+                System.out.println("Prediction finished.\n");
+                System.out.println(receivedMessage.getContent());
                 break;
         }
     }

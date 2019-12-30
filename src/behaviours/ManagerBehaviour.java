@@ -166,15 +166,11 @@ public class ManagerBehaviour extends FIPAMultipleTargetRequester {
                 sendPredictDataToClassifiers();
                 allOk = receiveAllTargetsMessagesInFipaProtocol();
                 if (allOk) {
-                    List<Double> predictions = managerAgent.votePredictions3();
+                    String predictions = managerAgent.getResults();
                     myLogger.info("Agent " + this.myAgent.getLocalName() + " >>> Predict done");
                     reply.setPerformative(ACLMessage.INFORM);
-                    try {
-                        reply.setContentObject((ArrayList) predictions);
-                        myAgent.send(reply);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    reply.setContent(predictions);
+                    myAgent.send(reply);
                 } else {
                     myLogger.severe("Agent " + this.myAgent.getLocalName() + " >>> Predict Failed");
                     reply.setPerformative(ACLMessage.FAILURE);
