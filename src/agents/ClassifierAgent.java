@@ -9,6 +9,8 @@ import jade.domain.FIPAException;
 import jade.util.Logger;
 import utils.ClassifierConfig;
 import weka.classifiers.Classifier;
+import weka.classifiers.functions.RBFNetwork;
+import weka.classifiers.lazy.IBk;
 import weka.classifiers.trees.J48;
 import weka.core.Instances;
 
@@ -72,9 +74,19 @@ public class ClassifierAgent extends Agent {
     }
 
     public boolean train(ClassifierConfig classifierConfig) {
-        if (!classifierConfig.getAlgorithm().equals("J48")) return false;
-
-        classifier = new J48();
+        switch (classifierConfig.getAlgorithm()) {
+            case "J48":
+                classifier = new J48();
+                break;
+            case "IBk":
+                classifier = new IBk();
+                break;
+            case "RBFNetwork":
+                classifier = new RBFNetwork();
+                break;
+            default:
+                return false;
+        }
         try {
             classifier.buildClassifier(classifierConfig.getData());
         } catch (Exception e) {

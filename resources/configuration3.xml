@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <SimulationSettings>
     <title>IMAS_basic_simulation</title>
-    <algorithm>RBFNetwork</algorithm>
-    <classifiers>4</classifiers>
-    <trainingSettings>40,40,40,40</trainingSettings>
+    <algorithm>IBk</algorithm>
+    <classifiers>2</classifiers>
+    <trainingSettings>80,80</trainingSettings>
     <classifyInstances>10</classifyInstances>
-    <file>iris.arff</file>
+    <file>segment-test.arff</file>
 </SimulationSettings>
