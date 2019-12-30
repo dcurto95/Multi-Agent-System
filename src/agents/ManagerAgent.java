@@ -34,8 +34,7 @@ public class ManagerAgent extends Agent {
     private Instances trainData;
     private Instances testData;
     private List<AgentController> classifierAgents;
-    private Map<AID, List<Double>> classifierPredictions;
-    private Map<Integer, List<Double>> classifierPredictions2;
+    private Map<Integer, List<Double>> classifierPredictions;
 
     public Instances[] getClassifiersTrainData() {
         return classifiersTrainData;
@@ -74,7 +73,6 @@ public class ManagerAgent extends Agent {
         setupLogger();
         classifierAgents = new ArrayList<>();
         classifierPredictions = new HashMap<>();
-        classifierPredictions2 = new HashMap<>();
 
         //Register the SL content language
         getContentManager().registerLanguage(new SLCodec(), FIPANames.ContentLanguage.FIPA_SL);
@@ -185,17 +183,11 @@ public class ManagerAgent extends Agent {
         setClassifiersTrainData(createTrainingSubset(configuration.getTrainingSettings(), trainData));
     }
 
-
-    public void setPrediction(AID sender, List<Double> predictions) {
-        classifierPredictions.put(sender, predictions);
+    public void setPrediction(int AIDIndex, List<Double> predictions) {
+        classifierPredictions.put(AIDIndex, predictions);
     }
 
-    public void setPrediction2(int AIDIndex, List<Double> predictions) {
-        classifierPredictions2.put(AIDIndex, predictions);
-    }
-
-    public List<Double> votePredictions() {
-        //TODO Improve
+    private List<Double> votePredictions() {
         List<Double> finalPrediction = new ArrayList<>();
         List<List<Double>> votes = new ArrayList<>(classifierPredictions.values());
 
@@ -227,18 +219,17 @@ public class ManagerAgent extends Agent {
         return finalPrediction;
     }
 
-    public List<Double> votePredictions2() {
-        //TODO Improve
+    private List<Double> votePredictions2() {
         List<Double> finalPrediction = new ArrayList<>();
-        List<Integer> AIDIndexes = new ArrayList<>(classifierPredictions2.keySet());
+        List<Integer> AIDIndexes = new ArrayList<>(classifierPredictions.keySet());
 
-        for (int i = 0; i < classifierPredictions2.get(AIDIndexes.get(0)).size(); i++) { // For each instance
+        for (int i = 0; i < classifierPredictions.get(AIDIndexes.get(0)).size(); i++) { // For each instance
             Map<Double, Integer> options = new HashMap<>();
 
             int maxVotes = 0;
             Double maxVoted = null;
             for (Integer AIDIndex : AIDIndexes) { // For each agent
-                Double agentVote = classifierPredictions2.get(AIDIndex).get(i);
+                Double agentVote = classifierPredictions.get(AIDIndex).get(i);
                 int trainingSize = configuration.getTrainingSettings()[AIDIndex];
 
                 if (!options.containsKey(agentVote)) {
@@ -260,10 +251,9 @@ public class ManagerAgent extends Agent {
         return finalPrediction;
     }
 
-    public List<Double> votePredictions3() {
-        //TODO Improve
+    private List<Double> votePredictions3() {
         List<Double> finalPrediction = new ArrayList<>();
-        List<Integer> AIDIndexes = new ArrayList<>(classifierPredictions2.keySet());
+        List<Integer> AIDIndexes = new ArrayList<>(classifierPredictions.keySet());
 
         int[] trainingSizes = configuration.getTrainingSettings();
         int maxTrainingSize = Collections.max(Arrays.stream(trainingSizes).boxed().collect(Collectors.toList()));
@@ -276,14 +266,14 @@ public class ManagerAgent extends Agent {
             }
         }
 
-        for (int i = 0; i < classifierPredictions2.get(AIDIndexes.get(0)).size(); i++) { // For each instance
+        for (int i = 0; i < classifierPredictions.get(AIDIndexes.get(0)).size(); i++) { // For each instance
             Map<Double, Integer> votesPerOption = new HashMap<>();
             Map<Double, Integer> votersPerOption = new HashMap<>();
 
             int maxVotes = 0;
             List<Double> maxVoted = new ArrayList<>();
             for (Integer AIDIndex : AIDIndexes) { // For each agent
-                Double agentVote = classifierPredictions2.get(AIDIndex).get(i);
+                Double agentVote = classifierPredictions.get(AIDIndex).get(i);
                 int numberOfVotes = effectiveNumberOfVotes.get(AIDIndex);
 
                 if (!votesPerOption.containsKey(agentVote)) {
@@ -347,7 +337,12 @@ public class ManagerAgent extends Agent {
         for (int i = 0; i < testData.numInstances(); i++) {
             if (testData.instance(i).classValue() == predictions.get(i)) correct++;
         }
-        result = result.concat((((float)correct / testData.numInstances()) * 100) + "%\n");
+        result = result.concat((((float) correct / testData.numInstances()) * 100) + "%\n");
+
         return result;
+    }
+
+    public void resetClassifierPredictions() {
+        classifierPredictions = new HashMap<>();
     }
 }
