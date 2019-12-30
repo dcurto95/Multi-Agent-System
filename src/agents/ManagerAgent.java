@@ -172,9 +172,9 @@ public class ManagerAgent extends Agent {
 
             Instances data = arff.getData();
             data.setClassIndex(data.numAttributes() - 1);
+            data.randomize(new java.util.Random());
             int trainSize = data.numInstances() - configuration.getClassifyInstances();
-            Instances trainData = new Instances(data, 0, trainSize);
-            setTrainData(trainData);
+            setTrainData(new Instances(data, 0, trainSize));
             setTestData(new Instances(data, trainSize, configuration.getClassifyInstances()));
             //TODO: Take out
             System.out.println("TRUTH:");
@@ -195,8 +195,8 @@ public class ManagerAgent extends Agent {
         classifierPredictions.put(sender, predictions);
     }
 
-    public void setPrediction2(int i, List<Double> predictions){
-        classifierPredictions2.put(i, predictions);
+    public void setPrediction2(int AIDIndex, List<Double> predictions){
+        classifierPredictions2.put(AIDIndex, predictions);
     }
 
     public List<Double> votePredictions() {
@@ -235,16 +235,16 @@ public class ManagerAgent extends Agent {
     public List<Double> votePredictions2() {
         //TODO Improve
         List<Double> finalPrediction = new ArrayList<>();
-        List<Integer> ids = new ArrayList<>(classifierPredictions2.keySet());
+        List<Integer> AIDIndexes = new ArrayList<>(classifierPredictions2.keySet());
 
-        for (int i = 0; i < classifierPredictions2.get(ids.get(0)).size(); i++) { // For each instance
+        for (int i = 0; i < classifierPredictions2.get(AIDIndexes.get(0)).size(); i++) { // For each instance
             Map<Double, Integer> options = new HashMap<>();
 
             int maxVotes = 0;
             Double maxVoted = null;
-            for (Integer id : ids) { // For each agent
-                Double agentVote = classifierPredictions2.get(id).get(i);
-                int trainingSize = configuration.getTrainingSettings()[id];
+            for (Integer AIDIndex : AIDIndexes) { // For each agent
+                Double agentVote = classifierPredictions2.get(AIDIndex).get(i);
+                int trainingSize = configuration.getTrainingSettings()[AIDIndex];
 
                 if (!options.containsKey(agentVote)) {
                     options.put(agentVote, 0);
@@ -253,7 +253,6 @@ public class ManagerAgent extends Agent {
                 int oldCount = options.get(agentVote);
                 int newCount = oldCount + trainingSize;
                 options.put(agentVote, newCount);
-                System.out.println("Agent amb " + trainingSize + " vota " + agentVote);
 
                 if (newCount > maxVotes) {
                     maxVotes = newCount;
@@ -262,6 +261,79 @@ public class ManagerAgent extends Agent {
             }
 
             finalPrediction.add(maxVoted);
+        }
+        return finalPrediction;
+    }
+
+    public List<Double> votePredictions3() {
+        //TODO Improve
+        List<Double> finalPrediction = new ArrayList<>();
+        List<Integer> AIDIndexes = new ArrayList<>(classifierPredictions2.keySet());
+
+        int[] trainingSizes = configuration.getTrainingSettings();
+        int maxTrainingSize = Collections.max(Arrays.stream(trainingSizes).boxed().collect(Collectors.toList()));
+        Map<Integer, Integer> effectiveNumberOfVotes = new HashMap<>();
+        for (int i = 0; i < trainingSizes.length; i++){
+            if (trainingSizes[i] > 0.5 * maxTrainingSize){
+                effectiveNumberOfVotes.put(i, trainingSizes[i]);
+            } else {
+                effectiveNumberOfVotes.put(i, (int) Math.ceil(0.5*trainingSizes[i]));
+            }
+        }
+
+        for (int i = 0; i < classifierPredictions2.get(AIDIndexes.get(0)).size(); i++) { // For each instance
+            Map<Double, Integer> votesPerOption = new HashMap<>();
+            Map<Double, Integer> votersPerOption = new HashMap<>();
+
+            int maxVotes = 0;
+            List<Double> maxVoted = new ArrayList<>();
+            for (Integer AIDIndex : AIDIndexes) { // For each agent
+                Double agentVote = classifierPredictions2.get(AIDIndex).get(i);
+                int numberOfVotes = effectiveNumberOfVotes.get(AIDIndex);
+
+                if (!votesPerOption.containsKey(agentVote)) {
+                    votesPerOption.put(agentVote, 0);
+                    votersPerOption.put(agentVote, 0);
+                }
+
+                int oldCount = votesPerOption.get(agentVote);
+                int newCount = oldCount + numberOfVotes;
+                votesPerOption.put(agentVote, newCount);
+
+                int newNumberVoters = votersPerOption.get(agentVote) + 1;
+                votersPerOption.put(agentVote, newNumberVoters);
+                System.out.println("Agent amb " + numberOfVotes + " vota " + agentVote);
+
+                if (newCount > maxVotes) {
+                    maxVotes = newCount;
+                    maxVoted = new ArrayList<>(List.of(agentVote));
+                } else if (newCount == maxVotes){
+                    maxVoted.add(agentVote);
+                }
+            }
+
+            if (maxVoted.size() == 1){
+                finalPrediction.add(maxVoted.get(0));
+            }
+            else if (maxVoted.size() > 1){ // TIE
+                List<Double> maxVoted2 = new ArrayList<>();
+                int maxVoters = 0;
+                for (Double vote : maxVoted) {
+                    int numberVoters = votersPerOption.get(vote);
+                    if (numberVoters > maxVoters) {
+                        maxVoters = numberVoters;
+                        maxVoted2 = new ArrayList<>(List.of(vote));
+                    } else if (numberVoters == maxVoters) {
+                        maxVoted2.add(vote);
+                    }
+                }
+                if (maxVoted2.size() == 1) {
+                    finalPrediction.add(maxVoted2.get(0));
+                }
+                else{ // TIE
+                    finalPrediction.add(maxVoted2.get(new java.util.Random().nextInt(maxVoted2.size())));
+                }
+            }
         }
         return finalPrediction;
     }
