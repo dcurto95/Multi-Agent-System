@@ -302,7 +302,6 @@ public class ManagerAgent extends Agent {
 
                 int newNumberVoters = votersPerOption.get(agentVote) + 1;
                 votersPerOption.put(agentVote, newNumberVoters);
-                System.out.println("Agent amb " + numberOfVotes + " vota " + agentVote);
 
                 if (newCount > maxVotes) {
                     maxVotes = newCount;
