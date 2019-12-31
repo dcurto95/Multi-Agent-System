@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <SimulationSettings>
-    <title>IMAS_basic_simulation</title>
-    <algorithm>MultilayerPerceptron</algorithm>
-    <classifiers>4</classifiers>
-    <trainingSettings>40,80,40,80</trainingSettings>
+    <title>IMAS_complete_simulation</title>
+    <algorithm>J48</algorithm>
+    <classifiers>5</classifiers>
+    <trainingSettings>100,200,300,400,500</trainingSettings>
     <classifyInstances>10</classifyInstances>
-    <file>iris.arff</file>
+    <file>segment-test.arff</file>
 </SimulationSettings>
