@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<SimulationSettings>
-    <title>IMAS_basic_simulation</title>
-    <algorithm>MultilayerPerceptron</algorithm>
-    <classifiers>3</classifiers>
-    <trainingSettings>100,5,5</trainingSettings>
-    <classifyInstances>10</classifyInstances>
-    <file>segment-challenge.arff</file>
-</SimulationSettings>
