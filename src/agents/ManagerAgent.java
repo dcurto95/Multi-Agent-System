@@ -141,16 +141,17 @@ public class ManagerAgent extends Agent {
     private Instances[] createTrainingSubset(int[] trainingSettings, Instances trainData) {
         Instances[] trainingSets = new Instances[trainingSettings.length];
 
+        trainData.randomize(new java.util.Random());
+
         int dataLength = trainData.numInstances();
         int lastInstance = 0;
         for (int i = 0; i < trainingSettings.length; i++) {
             int trainSize = trainingSettings[i];
 
-            trainData.randomize(new java.util.Random());
             Instances classifierData;
             if ((lastInstance + trainSize) < dataLength) {
                 classifierData = new Instances(trainData, lastInstance, trainSize);
-                lastInstance = trainSize;
+                lastInstance += trainSize;
             } else {
                 int first = lastInstance - ((lastInstance + trainSize) - dataLength);
                 classifierData = new Instances(trainData, first, trainSize);

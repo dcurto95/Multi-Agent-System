@@ -9,6 +9,7 @@ import jade.domain.FIPAException;
 import jade.util.Logger;
 import utils.ClassifierConfig;
 import weka.classifiers.Classifier;
+import weka.classifiers.functions.MultilayerPerceptron;
 import weka.classifiers.functions.RBFNetwork;
 import weka.classifiers.lazy.IBk;
 import weka.classifiers.trees.J48;
@@ -81,8 +82,8 @@ public class ClassifierAgent extends Agent {
             case "IBk":
                 classifier = new IBk();
                 break;
-            case "RBFNetwork":
-                classifier = new RBFNetwork();
+            case "MultilayerPerceptron":
+                classifier = new MultilayerPerceptron();
                 break;
             default:
                 return false;
