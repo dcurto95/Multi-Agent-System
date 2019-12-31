@@ -147,7 +147,17 @@ public class ManagerBehaviour extends FIPAMultipleTargetRequester {
                 }
                 break;
             case TRAIN:
-                managerAgent.setRandomTrainDataForClassifiers();
+                try {
+                    managerAgent.setRandomTrainDataForClassifiers();
+                } catch (Exception e) {
+                    myLogger.severe("Agent " + this.myAgent.getLocalName() + " >>> Training Failed." +
+                            " Training size was bigger than the dataset.");
+                    reply.setPerformative(ACLMessage.FAILURE);
+                    reply.setContent("The specified training size was bigger than the dataset.");
+                    myAgent.send(reply);
+                    state = INIT_DONE;
+                    break;
+                }
                 sendTrainingDataToClassifiers();
 
                 allOk = receiveAllTargetsMessagesInFipaProtocol();
@@ -158,6 +168,7 @@ public class ManagerBehaviour extends FIPAMultipleTargetRequester {
                 } else {
                     myLogger.severe("Agent " + this.myAgent.getLocalName() + " >>> Training Failed");
                     reply.setPerformative(ACLMessage.FAILURE);
+                    reply.setContent("Probably the classification algorithm is not supported.");
                     myAgent.send(reply);
                 }
                 state = INIT_DONE;

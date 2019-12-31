@@ -138,7 +138,7 @@ public class ManagerAgent extends Agent {
         }
     }
 
-    private Instances[] createTrainingSubset(int[] trainingSettings, Instances trainData) {
+    private Instances[] createTrainingSubset(int[] trainingSettings, Instances trainData) throws Exception {
         Instances[] trainingSets = new Instances[trainingSettings.length];
 
         trainData.randomize(new java.util.Random());
@@ -149,6 +149,9 @@ public class ManagerAgent extends Agent {
             int trainSize = trainingSettings[i];
 
             Instances classifierData;
+            if (trainSize > dataLength){
+                throw new Exception("The training size is bigger than the dataset");
+            }
             if ((lastInstance + trainSize) < dataLength) {
                 classifierData = new Instances(trainData, lastInstance, trainSize);
                 lastInstance += trainSize;
@@ -180,7 +183,7 @@ public class ManagerAgent extends Agent {
         }
     }
 
-    public void setRandomTrainDataForClassifiers() {
+    public void setRandomTrainDataForClassifiers() throws Exception {
         setClassifiersTrainData(createTrainingSubset(configuration.getTrainingSettings(), trainData));
     }
 

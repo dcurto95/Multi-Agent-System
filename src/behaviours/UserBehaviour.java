@@ -176,6 +176,7 @@ public class UserBehaviour extends FIPARequester {
                 break;
             case TRAIN:
                 System.out.println("Failed to train the model.");
+                System.out.println(receivedMessage.getContent());
                 break;
             case PREDICT:
                 System.out.println("The model hasn't been trained yet.");

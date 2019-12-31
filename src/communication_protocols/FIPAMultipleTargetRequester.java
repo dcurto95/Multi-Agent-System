@@ -43,6 +43,7 @@ public abstract class FIPAMultipleTargetRequester extends CyclicBehaviour {
      * Finishes when all targets are in a final state: INFORM, FAILURE, REFUSE or NOT_UNDERSTOOD
      */
     protected boolean receiveAllTargetsMessagesInFipaProtocol() {
+        targetLastMessageMap = new HashMap<>();
         do {
             ACLMessage receivedMessage = agent.blockingReceive();
             if (receivedMessage != null) {
