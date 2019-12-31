@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <SimulationSettings>
     <title>IMAS_complete_simulation</title>
-    <algorithm>J48</algorithm>
+    <algorithm>J48</algorithm> <!-- [J48, IBk, MultilayerPerceptron] -->
     <classifiers>5</classifiers>
     <trainingSettings>100,200,300,400,500</trainingSettings>
     <classifyInstances>10</classifyInstances>
