@@ -6,4 +6,4 @@
     <trainingSettings>80,80</trainingSettings>
     <classifyInstances>5</classifyInstances>
     <file>fertility_Diagnosis_train.arff</file>
-</SimulationSettings> 
+</SimulationSettings>
