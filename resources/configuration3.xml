@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <SimulationSettings>
     <title>IMAS_basic_simulation</title>
-    <algorithm>IBk</algorithm>
-    <classifiers>2</classifiers>
-    <trainingSettings>80,80</trainingSettings>
+    <algorithm>MultilayerPerceptron</algorithm> <!-- [J48, IBk, MultilayerPerceptron] -->
+    <classifiers>3</classifiers>
+    <trainingSettings>100,5,5</trainingSettings>
     <classifyInstances>10</classifyInstances>
-    <file>segment-test.arff</file>
+    <file>segment-challenge.arff</file>
 </SimulationSettings>
