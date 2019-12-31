@@ -5,5 +5,5 @@
     <classifiers>3</classifiers>
     <trainingSettings>100,5,5</trainingSettings>
     <classifyInstances>10</classifyInstances>
-    <file>segment-challenge.arff</file>
+    <file>segment-test.arff</file>
 </SimulationSettings>
