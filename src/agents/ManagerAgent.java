@@ -2,7 +2,6 @@ package agents;
 
 import behaviours.ManagerBehaviour;
 import jade.content.lang.sl.SLCodec;
-import jade.core.AID;
 import jade.core.Agent;
 import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
@@ -191,7 +190,7 @@ public class ManagerAgent extends Agent {
         classifierPredictions.put(AIDIndex, predictions);
     }
 
-    private List<Double> votePredictions() {
+    private List<Double> votePredictionsPlurality() {
         List<Double> finalPrediction = new ArrayList<>();
         List<List<Double>> votes = new ArrayList<>(classifierPredictions.values());
 
@@ -223,7 +222,7 @@ public class ManagerAgent extends Agent {
         return finalPrediction;
     }
 
-    private List<Double> votePredictions2() {
+    private List<Double> votePredictionsProportional() {
         List<Double> finalPrediction = new ArrayList<>();
         List<Integer> AIDIndexes = new ArrayList<>(classifierPredictions.keySet());
 
@@ -255,7 +254,7 @@ public class ManagerAgent extends Agent {
         return finalPrediction;
     }
 
-    private List<Double> votePredictions3() {
+    private List<Double> votePredictionsEnhanced() {
         List<Double> finalPrediction = new ArrayList<>();
         List<Integer> AIDIndexes = new ArrayList<>(classifierPredictions.keySet());
 
@@ -333,7 +332,8 @@ public class ManagerAgent extends Agent {
         }
 
         result = result.concat("]\nPREDICTIONS:\n");
-        List<Double> predictions = votePredictions3();
+//        List<Double> predictions = votePredictionsPlurality();
+        List<Double> predictions = votePredictionsEnhanced();
         result = result.concat(predictions.toString() + "\n");
 
         result = result.concat("\nACCURACY:\n");
